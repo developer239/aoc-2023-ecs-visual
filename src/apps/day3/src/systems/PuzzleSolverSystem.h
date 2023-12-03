@@ -36,24 +36,27 @@ class PuzzleSolverSystem : public ECS::System {
 
   void OnCollision(CollisionEvent& event) {
     auto& registry = ECS::Registry::Instance();
-    bool isAGearPart = registry.DoesEntityHaveTag(event.a, "GearPart");
-    bool isBGearPart = registry.DoesEntityHaveTag(event.b, "GearPart");
+    bool isAGearPart = registry.DoesEntityHaveTag(event.a, "EnginePart");
+    bool isBGearPart = registry.DoesEntityHaveTag(event.b, "EnginePart");
     bool isASymbol = registry.DoesEntityHaveTag(event.a, "Symbol");
     bool isBSymbol = registry.DoesEntityHaveTag(event.b, "Symbol");
 
-    // Ensure one is a gear part and the other is a symbol
+    // Ensure one is a engine part and the other is a symbol
     if ((isAGearPart && isBSymbol) || (isBGearPart && isASymbol)) {
       ECS::Entity gearPartEntity = isAGearPart ? event.a : event.b;
-      partEntities.insert(
-          gearPartEntity
-      );  // Insert the gear part
+      ECS::Entity symbolEntity = isASymbol ? event.a : event.b;
 
-      auto& rigidBody = registry.GetComponent<RigidBodyComponent>(gearPartEntity);
+      partEntities.insert(gearPartEntity);  // Insert the engine part
+
+      auto& rigidBody =
+          registry.GetComponent<RigidBodyComponent>(gearPartEntity);
       rigidBody.color = {50, 255, 50, 255};
+
+
     }
   }
 
-  void CalculateSumAndPrint() {
+  void CalculateSumOfAllParts() {
     sumOfParts = 0;  // Reset sum before calculation
 
     // Iterate over all the part entities that have collided with symbols

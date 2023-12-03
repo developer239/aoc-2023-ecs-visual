@@ -63,7 +63,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Create entities for parts
     for (const auto& part : partsAndSymbols.parts) {
       ECS::Entity partEntity = ECS::Registry::Instance().CreateEntity();
-      ECS::Registry::Instance().TagEntity(partEntity, "GearPart");
+      ECS::Registry::Instance().TagEntity(partEntity, "EnginePart");
 
       // Calculate the scaled position and size, round to the nearest integer
       int scaledX = std::lround(part.column * uniformScale);
@@ -144,7 +144,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
     ECS::Registry::Instance()
         .GetSystem<PuzzleSolverSystem>()
-        .CalculateSumAndPrint();
+        .CalculateSumOfAllParts();
   }
 
   void OnRender(Core::Window& window, Core::Renderer& renderer) override {
