@@ -19,7 +19,7 @@ class RenderRigidBodiesSystem : public ECS::System {
           (int)rigidBodyComponent.position.y,
           (int)rigidBodyComponent.width,
           (int)rigidBodyComponent.height};
-      SDL_SetRenderDrawColor(renderer.Get().get(), 255, 255, 255, 255);
+      SDL_SetRenderDrawColor(renderer.Get().get(), rigidBodyComponent.color.r, rigidBodyComponent.color.g, rigidBodyComponent.color.b, rigidBodyComponent.color.a);
       SDL_RenderFillRect(renderer.Get().get(), &rect);
     }
   }

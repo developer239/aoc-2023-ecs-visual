@@ -7,11 +7,12 @@ struct RigidBodyComponent {
   int height;
   Vec2 velocity;
   Vec2 position;
-  bool filled;  // Indicates whether the body is filled or just a border
+  bool filled;
+  SDL_Color color;
 
   RigidBodyComponent(
       int width = 0, int height = 0, Vec2 position = Vec2(0.0, 0.0),
-      Vec2 velocity = Vec2(0.0, 0.0), bool filled = true
+      Vec2 velocity = Vec2(0.0, 0.0), bool filled = true, SDL_Color color = {255, 255, 255, 255}
   )
-      : width(width), height(height), velocity(velocity), position(position), filled(filled) {}
+      : width(width), height(height), velocity(velocity), position(position), filled(filled), color(color) {}
 };

@@ -39,13 +39,12 @@ class RenderCollidersSystem : public ECS::System {
       SDL_RenderDrawRect(renderer.Get().get(), &colliderRect);
     }
 
-    // Reset the renderer color to avoid affecting other render calls
     SDL_SetRenderDrawColor(
         renderer.Get().get(),
         0,
         0,
         0,
         255
-    );  // Back to black or another default color
+    );
   }
 };

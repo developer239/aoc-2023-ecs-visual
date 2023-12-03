@@ -10,7 +10,6 @@
 #include "../services/PuzzleInputParser.h"
 #include "../systems/CollisionSystem.h"
 #include "../systems/KeyboardControlSystem.h"
-#include "../systems/MovementSystem.h"
 #include "../systems/PuzzleSolverSystem.h"
 #include "../systems/RenderColliderSystem.h"
 #include "../systems/RenderGridSystem.h"

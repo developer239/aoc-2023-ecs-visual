@@ -43,9 +43,13 @@ class PuzzleSolverSystem : public ECS::System {
 
     // Ensure one is a gear part and the other is a symbol
     if ((isAGearPart && isBSymbol) || (isBGearPart && isASymbol)) {
+      ECS::Entity gearPartEntity = isAGearPart ? event.a : event.b;
       partEntities.insert(
-          isAGearPart ? event.a : event.b
+          gearPartEntity
       );  // Insert the gear part
+
+      auto& rigidBody = registry.GetComponent<RigidBodyComponent>(gearPartEntity);
+      rigidBody.color = {50, 255, 50, 255};
     }
   }
 
