@@ -48,25 +48,16 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Entities & Components
 
     // Puzzle related entities
-    auto inputData = ParseInput("assets/input-example-1.txt");
+    auto inputData = ParseInput("assets/input.txt");
     auto partsAndSymbols = FindPartsAndSymbols(inputData);
 
-    int maxWidth = 0;
-    for (const auto& line : inputData) {
-      maxWidth = std::max(maxWidth, static_cast<int>(line.length()));
-    }
-    int maxHeight = inputData.size();
-
-    // Calculate a uniform scale factor for both width and height
-    float uniformScale = std::min(
-        static_cast<float>(window.GetWidth()) / maxWidth,
-        static_cast<float>(window.GetHeight()) / maxHeight
-    );
+    // Fixed cell size
+    const float cellSize = 50.0f;
 
     // Initialize grid system
     ECS::Registry::Instance().AddSystem<RenderGridSystem>(
-        uniformScale,
-        uniformScale
+        cellSize,
+        cellSize
     );
 
     // Create entities for parts
@@ -74,12 +65,10 @@ class MinimalLoopStrategy : public Core::IStrategy {
       ECS::Entity partEntity = ECS::Registry::Instance().CreateEntity();
       ECS::Registry::Instance().TagEntity(partEntity, "EnginePart");
 
-      // Calculate the scaled position and size, round to the nearest integer
-      int scaledX = std::lround(part.column * uniformScale);
-      int scaledY = std::lround(part.row * uniformScale);
-      int scaledWidth = std::lround(part.number.length() * uniformScale);
-      int scaledHeight =
-          std::lround(uniformScale);  // Height is based on a single character
+      int scaledX = part.column * cellSize;
+      int scaledY = part.row * cellSize;
+      int scaledWidth = part.number.length() * cellSize;
+      int scaledHeight = cellSize;
 
       ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
           partEntity,
@@ -107,11 +96,9 @@ class MinimalLoopStrategy : public Core::IStrategy {
       ECS::Entity symbolEntity = ECS::Registry::Instance().CreateEntity();
       ECS::Registry::Instance().TagEntity(symbolEntity, "Symbol");
 
-      // Calculate the scaled position and size, round to the nearest integer
-      int scaledX = std::lround(symbol.column * uniformScale);
-      int scaledY = std::lround(symbol.row * uniformScale);
-      int scaledSize =
-          std::lround(uniformScale);  // Assuming square size for symbols
+      int scaledX = symbol.column * cellSize;
+      int scaledY = symbol.row * cellSize;
+      int scaledSize = cellSize; // Assuming square size for symbols
 
       ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
           symbolEntity,
@@ -142,8 +129,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddComponent<CameraComponent>(
         cameraEntity.value(),
         Vec2(0, 0),
-        window.GetWidth() + 100,
-        window.GetHeight() + 100
+        window.GetWidth(),
+        window.GetHeight()
     );
   }
 
