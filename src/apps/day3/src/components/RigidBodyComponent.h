@@ -5,7 +5,6 @@
 struct RigidBodyComponent {
   int width;
   int height;
-  Vec2 velocity;
   Vec2 position;
   bool filled;
   SDL_Color color;
