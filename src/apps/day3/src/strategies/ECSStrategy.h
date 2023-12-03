@@ -77,7 +77,6 @@ class MinimalLoopStrategy : public Core::IStrategy {
           scaledWidth,
           scaledHeight,
           Vec2(scaledX, scaledY),
-          Vec2(0, 0),
           true
       );
 
@@ -110,7 +109,6 @@ class MinimalLoopStrategy : public Core::IStrategy {
           scaledSize,
           scaledSize,
           Vec2(scaledX, scaledY),
-          Vec2(0, 0),
           true
       );
 
