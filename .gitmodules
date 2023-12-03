@@ -1,0 +1,15 @@
+[submodule "cmake/imgui"]
+	path = cmake/imgui
+	url = https://github.com/developer239/cmake-modern-findimgui-sdl
+[submodule "cmake/sdl2"]
+	path = cmake/sdl2
+	url = https://github.com/opeik/cmake-modern-findsdl2
+[submodule "externals/imgui"]
+	path = externals/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "externals/googletest"]
+	path = externals/googletest
+	url = https://github.com/google/googletest
+[submodule "externals/ImGuiFileDialog"]
+	path = externals/ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog.git
