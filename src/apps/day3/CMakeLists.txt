@@ -1,5 +1,5 @@
-set(APP_NAME AppPongECS)
-set(APP_FOLDER_NAME pong-ecs)
+set(APP_NAME Day3)
+set(APP_FOLDER_NAME day3)
 
 set(APP_NAME_TEST ${LIB_NAME}Test)
 

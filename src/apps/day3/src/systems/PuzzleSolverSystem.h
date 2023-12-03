@@ -69,8 +69,6 @@ class PuzzleSolverSystem : public ECS::System {
     partEntities.clear();
   }
 
-  int GetSum() const { return sumOfParts; }
-
  private:
   std::unordered_set<ECS::Entity> partEntities;
   int sumOfParts = 0;
