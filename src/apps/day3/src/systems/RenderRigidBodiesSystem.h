@@ -11,26 +11,21 @@ class RenderRigidBodiesSystem : public ECS::System {
   RenderRigidBodiesSystem() { RequireComponent<RigidBodyComponent>(); }
 
   void Render(Core::Renderer& renderer, ECS::Entity cameraEntity) {
-    auto& camera =
-        ECS::Registry::Instance().GetComponent<CameraComponent>(cameraEntity);
+    auto& camera = ECS::Registry::Instance().GetComponent<CameraComponent>(cameraEntity);
 
     for (auto entity : GetSystemEntities()) {
-      auto rigidBodyComponent =
-          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      auto& rigidBodyComponent = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
 
-      if (IsEntityInView(rigidBodyComponent, camera)) {
-        SDL_Rect rect = {
-            (int)rigidBodyComponent.position.x,
-            (int)rigidBodyComponent.position.y,
-            (int)rigidBodyComponent.width,
-            (int)rigidBodyComponent.height};
-        SDL_SetRenderDrawColor(
-            renderer.Get().get(),
-            rigidBodyComponent.color.r,
-            rigidBodyComponent.color.g,
-            rigidBodyComponent.color.b,
-            rigidBodyComponent.color.a
-        );
+      // Calculate the position of the rigid body relative to the camera
+      int relativeX = static_cast<int>(rigidBodyComponent.position.x - camera.position.x);
+      int relativeY = static_cast<int>(rigidBodyComponent.position.y - camera.position.y);
+
+      // Check if the entity is within the camera's view before rendering
+      if (relativeX + rigidBodyComponent.width > 0 && relativeX < camera.width &&
+          relativeY + rigidBodyComponent.height > 0 && relativeY < camera.height) {
+
+        SDL_Rect rect = { relativeX, relativeY, rigidBodyComponent.width, rigidBodyComponent.height };
+        SDL_SetRenderDrawColor(renderer.Get().get(), rigidBodyComponent.color.r, rigidBodyComponent.color.g, rigidBodyComponent.color.b, rigidBodyComponent.color.a);
         SDL_RenderFillRect(renderer.Get().get(), &rect);
       }
     }

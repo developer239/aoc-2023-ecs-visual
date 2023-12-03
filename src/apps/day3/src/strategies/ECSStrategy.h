@@ -49,8 +49,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddComponent<CameraComponent>(
         cameraEntity,
         Vec2(0, 0),
-        window.GetWidth() / 2,
-        window.GetHeight() / 2
+        window.GetWidth() + 100,
+        window.GetHeight() + 100
     );
 
     // Puzzle related entities
@@ -172,9 +172,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
         renderer,
         cameraEntity
     );
-    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer);
+    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer, cameraEntity);
 
-    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer
-    );
+    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity);
   }
 };
