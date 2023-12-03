@@ -12,10 +12,11 @@ struct TextComponent {
 
   int positionX = 0;
   int positionY = 0;
-  bool isFixed = true;
+  bool isFixed = false;
 
   TextComponent(
-      std::string text = "", SDL_Color color = {0, 0, 0, 255}, int fontSize = 24
+      std::string text = "", SDL_Color color = {0, 0, 0, 255}, int fontSize = 24,
+      bool isFixed = false
   )
-      : text(std::move(text)), color(color), fontSize(fontSize) {}
+      : text(std::move(text)), color(color), fontSize(fontSize), isFixed(isFixed) {}
 };

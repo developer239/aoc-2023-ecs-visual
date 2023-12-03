@@ -22,6 +22,8 @@
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
   std::optional<ECS::Entity> cameraEntity;
+  std::optional<ECS::Entity> puzzleSolverEntity1;
+  std::optional<ECS::Entity> puzzleSolverEntity2;
 
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/arial.ttf", 24);
@@ -48,7 +50,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Entities & Components
 
     // Puzzle related entities
-    auto inputData = ParseInput("assets/input.txt");
+    auto inputData = ParseInput("assets/input-example-1.txt");
     auto partsAndSymbols = FindPartsAndSymbols(inputData);
 
     // Fixed cell size
@@ -132,6 +134,45 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window.GetWidth(),
         window.GetHeight()
     );
+
+    // Results
+
+    // Create UI entities for puzzle solver values
+    puzzleSolverEntity1 = ECS::Registry::Instance().CreateEntity();
+    puzzleSolverEntity2 = ECS::Registry::Instance().CreateEntity();
+
+    // Set up the first UI entity
+    ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
+        puzzleSolverEntity1.value(),
+        300, 50,
+        Vec2(50, 50),
+        true,
+        SDL_Color{0, 0, 255, 255},
+        true
+    );
+    ECS::Registry::Instance().AddComponent<TextComponent>(
+        puzzleSolverEntity1.value(),
+        "Puzzle Solver Value 1",
+        SDL_Color{255, 255, 255, 255},
+        24,
+        true
+    );
+
+    ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
+        puzzleSolverEntity2.value(),
+        300, 50,
+        Vec2(50, 100),
+        true,
+        SDL_Color{0, 0, 255, 255},
+        true
+    );
+    ECS::Registry::Instance().AddComponent<TextComponent>(
+        puzzleSolverEntity2.value(),
+        "Puzzle Solver Value 2",
+        SDL_Color{255, 255, 255, 255},
+        24,
+        true
+    );
   }
 
   void HandleEvent(SDL_Event& event) override {
@@ -147,10 +188,10 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
     ECS::Registry::Instance()
         .GetSystem<PuzzleSolverSystem>()
-        .CalculateSumOfAllParts();
+        .CalculateSumOfAllParts(puzzleSolverEntity1.value());
     ECS::Registry::Instance()
         .GetSystem<PuzzleSolverSystem>()
-        .CalculateSumAllGearRatios();
+        .CalculateSumAllGearRatios(puzzleSolverEntity2.value());
   }
 
   void OnRender(Core::Window& window, Core::Renderer& renderer) override {
@@ -158,12 +199,14 @@ class MinimalLoopStrategy : public Core::IStrategy {
         renderer,
         window
     );
+
+    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity.value());
+
     ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
         renderer,
         cameraEntity.value()
     );
     ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer, cameraEntity.value());
 
-    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity.value());
   }
 };

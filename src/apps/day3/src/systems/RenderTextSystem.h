@@ -34,8 +34,8 @@ class RenderTextSystem : public ECS::System {
       SDL_QueryTexture(texture, nullptr, nullptr, &textWidth, &textHeight);
 
       // Calculate text position relative to the camera
-      int relativeX = rigidBody.position.x + (rigidBody.width - textWidth) / 2 - camera.position.x;
-      int relativeY = rigidBody.position.y + (rigidBody.height - textHeight) / 2 - camera.position.y;
+      int relativeX = rigidBody.position.x + (rigidBody.width - textWidth) / 2 - (textLabel.isFixed ? 0 : camera.position.x);
+      int relativeY = rigidBody.position.y + (rigidBody.height - textHeight) / 2 - (textLabel.isFixed ? 0 : camera.position.y);
 
       SDL_Rect dstRect = { relativeX, relativeY, textWidth, textHeight };
       SDL_RenderCopy(renderer.Get().get(), texture, nullptr, &dstRect);

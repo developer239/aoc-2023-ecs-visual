@@ -77,7 +77,7 @@ class PuzzleSolverSystem : public ECS::System {
     }
   }
 
-  void CalculateSumAllGearRatios() {
+  void CalculateSumAllGearRatios(ECS::Entity& scoreEntity) {
     int sumOfAllGearRatios = 0;
     for (auto& [key, gearSymbol] : gearSymbolsMap) {
       if (gearSymbol.adjacentCount == 2) {
@@ -87,28 +87,27 @@ class PuzzleSolverSystem : public ECS::System {
       }
     }
 
-    std::cout << "The sum of all gear ratios is: " << sumOfAllGearRatios
-              << std::endl;
+    auto& textComponent =
+        ECS::Registry::Instance().GetComponent<TextComponent>(scoreEntity);
+    textComponent.text =
+        "Gear Ratios Sum: " + std::to_string(sumOfAllGearRatios);
   }
 
-  void CalculateSumOfAllParts() {
+  void CalculateSumOfAllParts(ECS::Entity& scoreEntity) {
     sumOfParts = 0;  // Reset sum before calculation
 
-    // Iterate over all the part entities that have collided with symbols
     for (auto& entity : partEntities) {
       if (ECS::Registry::Instance().HasComponent<TextComponent>(entity)) {
         auto& textComponent =
             ECS::Registry::Instance().GetComponent<TextComponent>(entity);
         sumOfParts += std::stoi(textComponent.text
-        );  // Convert text to integer and add to sum
+        );
       }
     }
 
-    // Print out the result
-    std::cout << "The sum of all part numbers is: " << sumOfParts << std::endl;
-
-    // Clear the set for the next calculation
-    partEntities.clear();
+    auto& textComponent =
+        ECS::Registry::Instance().GetComponent<TextComponent>(scoreEntity);
+    textComponent.text = "Parts Sum: " + std::to_string(sumOfParts);
   }
 
  private:
