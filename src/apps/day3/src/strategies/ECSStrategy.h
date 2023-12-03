@@ -145,7 +145,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
         puzzleSolverEntity1.value(),
         300, 50,
-        Vec2(50, 50),
+        Vec2(500, 50),
         true,
         SDL_Color{0, 0, 255, 255},
         true
@@ -161,7 +161,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
         puzzleSolverEntity2.value(),
         300, 50,
-        Vec2(50, 100),
+        Vec2(500, 100),
         true,
         SDL_Color{0, 0, 255, 255},
         true

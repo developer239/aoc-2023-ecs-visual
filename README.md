@@ -32,3 +32,8 @@ $ ctest
 $  cd build/src/apps/pong
 $ ./AppPong 
 ```
+
+# Result
+
+![part1](./example-input.png)
+![part2](./input.png)
