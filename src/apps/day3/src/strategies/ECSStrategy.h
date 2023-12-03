@@ -8,6 +8,7 @@
 #include "../common/Vec2.h"
 #include "../components/TextComponent.h"
 #include "../services/PuzzleInputParser.h"
+#include "../systems/CameraSystem.h"
 #include "../systems/CollisionSystem.h"
 #include "../systems/KeyboardControlSystem.h"
 #include "../systems/PuzzleSolverSystem.h"
@@ -18,6 +19,8 @@
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
+  ECS::Entity cameraEntity = ECS::Registry::Instance().CreateEntity();
+
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/arial.ttf", 24);
 
@@ -28,6 +31,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddSystem<RenderTextSystem>();
     ECS::Registry::Instance().AddSystem<RenderCollidersSystem>();
     ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>();
+    ECS::Registry::Instance().AddSystem<CameraSystem>();
 
     // Events
     ECS::Registry::Instance()
@@ -36,9 +40,20 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
     ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().SubscribeToEvents(
     );
+    ECS::Registry::Instance().GetSystem<CameraSystem>().SubscribeToEvents(
+    );
 
     // Entities & Components
 
+    // Camera
+    ECS::Registry::Instance().AddComponent<CameraComponent>(
+        cameraEntity,
+        Vec2(0, 0),
+        window.GetWidth() / 2,
+        window.GetHeight() / 2
+    );
+
+    // Puzzle related entities
     auto inputData = ParseInput("assets/input-example-1.txt");
     auto partsAndSymbols = FindPartsAndSymbols(inputData);
 
@@ -154,7 +169,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window
     );
     ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
-        renderer
+        renderer,
+        cameraEntity
     );
     ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer);
 

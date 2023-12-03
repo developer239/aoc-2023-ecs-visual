@@ -20,7 +20,8 @@ set(SOURCES
         src/systems/RenderTextSystem.h
         src/systems/RenderGridSystem.h
         src/systems/RenderColliderSystem.h
-        src/systems/PuzzleSolverSystem.h)
+        src/systems/PuzzleSolverSystem.h
+        src/components/CameraComponent.h src/systems/CameraSystem.h)
 
 add_executable(${APP_NAME} ${SOURCES})
 
