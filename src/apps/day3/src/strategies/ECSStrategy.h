@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "core/AssetStore.h"
 #include "core/IStrategy.h"
 #include "core/Window.h"
@@ -19,7 +21,7 @@
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
-  ECS::Entity cameraEntity = ECS::Registry::Instance().CreateEntity();
+  std::optional<ECS::Entity> cameraEntity;
 
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/arial.ttf", 24);
@@ -44,14 +46,6 @@ class MinimalLoopStrategy : public Core::IStrategy {
     );
 
     // Entities & Components
-
-    // Camera
-    ECS::Registry::Instance().AddComponent<CameraComponent>(
-        cameraEntity,
-        Vec2(0, 0),
-        window.GetWidth() + 100,
-        window.GetHeight() + 100
-    );
 
     // Puzzle related entities
     auto inputData = ParseInput("assets/input-example-1.txt");
@@ -142,6 +136,15 @@ class MinimalLoopStrategy : public Core::IStrategy {
           Vec2(bboxOffset, bboxOffset)
       );
     }
+
+    // Camera
+    cameraEntity = ECS::Registry::Instance().CreateEntity();
+    ECS::Registry::Instance().AddComponent<CameraComponent>(
+        cameraEntity.value(),
+        Vec2(0, 0),
+        window.GetWidth() + 100,
+        window.GetHeight() + 100
+    );
   }
 
   void HandleEvent(SDL_Event& event) override {
@@ -170,10 +173,10 @@ class MinimalLoopStrategy : public Core::IStrategy {
     );
     ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
         renderer,
-        cameraEntity
+        cameraEntity.value()
     );
-    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer, cameraEntity);
+    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer, cameraEntity.value());
 
-    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity);
+    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity.value());
   }
 };
