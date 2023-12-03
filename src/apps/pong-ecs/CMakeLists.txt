@@ -15,7 +15,7 @@ set(SOURCES
         src/systems/KeyboardControlSystem.h
         src/systems/MovementSystem.h
         src/systems/RenderRigidBodiesSystem.h
-        src/strategies/ECSStrategy.h)
+        src/strategies/ECSStrategy.h src/services/PuzzleInputParser.h src/components/TextComponent.h src/systems/RenderTextSystem.h src/systems/RenderGridSystem.h src/systems/RenderColliderSystem.h src/systems/PuzzleSolverSystem.h)
 
 add_executable(${APP_NAME} ${SOURCES})
 
