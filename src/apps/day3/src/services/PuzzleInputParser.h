@@ -16,6 +16,9 @@ struct GearSymbols {
   int row = -1;
   int column = -1;
   std::string symbol;
+
+  int adjacentCount = 0;
+  std::vector<std::string> adjacentNumbers = {};
 };
 
 struct PartsAndSymbolsResult {

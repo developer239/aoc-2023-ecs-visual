@@ -145,6 +145,9 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance()
         .GetSystem<PuzzleSolverSystem>()
         .CalculateSumOfAllParts();
+    ECS::Registry::Instance()
+        .GetSystem<PuzzleSolverSystem>()
+        .CalculateSumAllGearRatios();
   }
 
   void OnRender(Core::Window& window, Core::Renderer& renderer) override {

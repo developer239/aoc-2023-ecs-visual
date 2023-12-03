@@ -36,24 +36,59 @@ class PuzzleSolverSystem : public ECS::System {
 
   void OnCollision(CollisionEvent& event) {
     auto& registry = ECS::Registry::Instance();
-    bool isAGearPart = registry.DoesEntityHaveTag(event.a, "EnginePart");
-    bool isBGearPart = registry.DoesEntityHaveTag(event.b, "EnginePart");
+    bool isAEnginePart = registry.DoesEntityHaveTag(event.a, "EnginePart");
+    bool isBEnginePart = registry.DoesEntityHaveTag(event.b, "EnginePart");
     bool isASymbol = registry.DoesEntityHaveTag(event.a, "Symbol");
     bool isBSymbol = registry.DoesEntityHaveTag(event.b, "Symbol");
 
     // Ensure one is a engine part and the other is a symbol
-    if ((isAGearPart && isBSymbol) || (isBGearPart && isASymbol)) {
-      ECS::Entity gearPartEntity = isAGearPart ? event.a : event.b;
+    if ((isAEnginePart && isBSymbol) || (isBEnginePart && isASymbol)) {
+      ECS::Entity enginePartEntity = isAEnginePart ? event.a : event.b;
       ECS::Entity symbolEntity = isASymbol ? event.a : event.b;
 
-      partEntities.insert(gearPartEntity);  // Insert the engine part
+      partEntities.insert(enginePartEntity);  // Insert the engine part
 
       auto& rigidBody =
-          registry.GetComponent<RigidBodyComponent>(gearPartEntity);
+          registry.GetComponent<RigidBodyComponent>(enginePartEntity);
       rigidBody.color = {50, 255, 50, 255};
 
+      auto enginePartTextComponent =
+          registry.GetComponent<TextComponent>(enginePartEntity);
 
+      auto symbolTextComponent =
+          registry.GetComponent<TextComponent>(symbolEntity);
+      auto symbolRigidBody =
+          registry.GetComponent<RigidBodyComponent>(symbolEntity);
+
+      if (symbolTextComponent.text == "*") {
+        std::string key = std::to_string(symbolRigidBody.position.x) + "-" +
+                          std::to_string(symbolRigidBody.position.y);
+        auto& gearSymbol = gearSymbolsMap[key];
+
+        if (std::find(
+                gearSymbol.adjacentNumbers.begin(),
+                gearSymbol.adjacentNumbers.end(),
+                enginePartTextComponent.text
+            ) == gearSymbol.adjacentNumbers.end()) {
+          gearSymbol.adjacentCount++;
+          gearSymbol.adjacentNumbers.push_back(enginePartTextComponent.text);
+        }
+      }
     }
+  }
+
+  void CalculateSumAllGearRatios() {
+    int sumOfAllGearRatios = 0;
+    for (auto& [key, gearSymbol] : gearSymbolsMap) {
+      if (gearSymbol.adjacentCount == 2) {
+        auto gearRatio = std::stoi(gearSymbol.adjacentNumbers[0]) *
+                         std::stoi(gearSymbol.adjacentNumbers[1]);
+        sumOfAllGearRatios += gearRatio;
+      }
+    }
+
+    std::cout << "The sum of all gear ratios is: " << sumOfAllGearRatios
+              << std::endl;
   }
 
   void CalculateSumOfAllParts() {
@@ -78,5 +113,6 @@ class PuzzleSolverSystem : public ECS::System {
 
  private:
   std::unordered_set<ECS::Entity> partEntities;
+  std::unordered_map<std::string, GearSymbols> gearSymbolsMap = {};
   int sumOfParts = 0;
 };
