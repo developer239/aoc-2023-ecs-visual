@@ -27,9 +27,10 @@ class PuzzleSolverSystem : public ECS::System {
  public:
   PuzzleSolverSystem(
       std::shared_ptr<bool> isTiltedNorth,
-      std::optional<ECS::Entity>& tiltTrackerEntity
+      std::optional<ECS::Entity>& tiltTrackerEntity,
+      std::shared_ptr<bool> simulationStarted
   )
-      : isTiltedNorth(isTiltedNorth), tiltTrackerEntity(tiltTrackerEntity) {
+      : isTiltedNorth(isTiltedNorth), tiltTrackerEntity(tiltTrackerEntity), simulationStarted(simulationStarted) {
     RequireComponent<TextComponent>();
   }
 
@@ -72,7 +73,7 @@ class PuzzleSolverSystem : public ECS::System {
     }
 
     if (!isAnyMovingUp) {
-      simulationStarted = false;
+      *simulationStarted = false;
 
       auto& tiltTrackerTextComponent =
           ECS::Registry::Instance().GetComponent<TextComponent>(
@@ -87,7 +88,7 @@ class PuzzleSolverSystem : public ECS::System {
     //    including the row the rock is on. (Cube-shaped rocks (#) don't
     //    contribute to load.) So, the amount of load caused by each rock in
     //    each row is as follows:
-    if(simulationStarted) return;
+    if(*simulationStarted) return;
 
     auto entitiesByGroup =
         ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
@@ -130,8 +131,6 @@ class PuzzleSolverSystem : public ECS::System {
   }
 
  private:
-  bool simulationStarted = false;
-
   void StartSimulation() {
     auto& tiltTrackerTextComponent =
         ECS::Registry::Instance().GetComponent<TextComponent>(
@@ -140,17 +139,18 @@ class PuzzleSolverSystem : public ECS::System {
     tiltTrackerTextComponent.text = "Started: North";
 
     *isTiltedNorth = true;
-    simulationStarted = true;
+    *simulationStarted = true;
 
     auto entities =
         ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
     for (auto entity : entities) {
       auto& rigidBody =
           ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      rigidBody.velocity.y = -10;
+      rigidBody.velocity.y = -1;
     }
   }
 
+  std::shared_ptr<bool> simulationStarted;
   std::shared_ptr<bool> isTiltedNorth;
   std::optional<ECS::Entity> tiltTrackerEntity;
 };

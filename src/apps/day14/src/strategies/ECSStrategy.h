@@ -22,6 +22,7 @@
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
   std::shared_ptr<bool> isTiltedNorth = std::make_shared<bool>(false);
+  std::shared_ptr<bool> simulationStarted = std::make_shared<bool>(false);
 
   std::optional<ECS::Entity> tiltTrackerEntity;
 
@@ -60,7 +61,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddSystem<CollisionSystem>();
     ECS::Registry::Instance().AddSystem<RenderTextSystem>();
     ECS::Registry::Instance().AddSystem<RenderCollidersSystem>();
-    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(isTiltedNorth, tiltTrackerEntity);
+    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(isTiltedNorth, tiltTrackerEntity, simulationStarted);
     ECS::Registry::Instance().AddSystem<CameraSystem>();
 
     // Events
@@ -75,7 +76,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Entities & Components
 
     // Puzzle related entities
-    auto inputData = ParseInput("assets/input.txt");
+    auto inputData = ParseInput("assets/input-example-1.txt");
     auto platform = BuildPlatformFromInput(inputData);
 
     // Fixed cell size
@@ -196,18 +197,20 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window
     );
 
-    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(
-        renderer,
-        cameraEntity.value()
-    );
+    if(!*simulationStarted) {
+      ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(
+          renderer,
+          cameraEntity.value()
+      );
 
-    ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
-        renderer,
-        cameraEntity.value()
-    );
-    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(
-        renderer,
-        cameraEntity.value()
-    );
+      ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
+          renderer,
+          cameraEntity.value()
+      );
+      ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(
+          renderer,
+          cameraEntity.value()
+      );
+    }
   }
 };
