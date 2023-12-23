@@ -1,4 +1,5 @@
 add_subdirectory(apps/day3)
+add_subdirectory(apps/day14)
 
 add_subdirectory(packages/core)
 add_subdirectory(packages/core-imgui)
