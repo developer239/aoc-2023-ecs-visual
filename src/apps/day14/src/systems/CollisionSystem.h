@@ -19,9 +19,9 @@ class CollisionSystem : public ECS::System {
 
     for (auto i = entities.begin(); i != entities.end(); i++) {
       ECS::Entity a = *i;
-      auto aRigidBody =
+      auto& aRigidBody =
           ECS::Registry::Instance().GetComponent<RigidBodyComponent>(a);
-      auto aCollider =
+      auto& aCollider =
           ECS::Registry::Instance().GetComponent<BoxColliderComponent>(a);
 
       for (auto j = i; j != entities.end(); j++) {
@@ -31,9 +31,9 @@ class CollisionSystem : public ECS::System {
           continue;
         }
 
-        auto bRigidBody =
+        auto& bRigidBody =
             ECS::Registry::Instance().GetComponent<RigidBodyComponent>(b);
-        auto bCollider =
+        auto& bCollider =
             ECS::Registry::Instance().GetComponent<BoxColliderComponent>(b);
 
         bool collisionHappened = CheckAABBCollision(
@@ -49,6 +49,20 @@ class CollisionSystem : public ECS::System {
 
         if (collisionHappened) {
           Events::Bus::Instance().EmitEvent<CollisionEvent>(a, b);
+
+          aRigidBody.velocity.x = 0;
+          aRigidBody.velocity.y = 0;
+          bRigidBody.velocity.x = 0;
+          bRigidBody.velocity.y = 0;
+        }
+
+        if (aRigidBody.position.x < 0 || aRigidBody.position.y < 0) {
+          aRigidBody.velocity.x = 0;
+          aRigidBody.velocity.y = 0;
+        }
+        if (bRigidBody.position.x < 0 || bRigidBody.position.y < 0) {
+          bRigidBody.velocity.x = 0;
+          bRigidBody.velocity.y = 0;
         }
       }
     }

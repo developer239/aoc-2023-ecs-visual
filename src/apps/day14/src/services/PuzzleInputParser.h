@@ -4,84 +4,69 @@
 #include <string>
 #include <vector>
 
-bool isSymbol(char ch) { return !std::isdigit(ch) && ch != '.'; }
+enum TileType { ROUNDED_ROCK, CUBE_SHAPED_ROCK, EMPTY_SPACE };
 
-struct Part {
-  int row = -1;
-  int column = -1;
-  std::string number;
+struct Tile {
+ public:
+  TileType type;
+
+  int row;
+  int col;
+
+  int initialRow;
+  int initialCol;
+
+  static TileType getTypeFromChar(char letter) {
+    switch (letter) {
+      case '#':
+        return CUBE_SHAPED_ROCK;
+      case 'O':
+        return ROUNDED_ROCK;
+      case '.':
+        return EMPTY_SPACE;
+      default:
+        throw std::runtime_error("Unknown tile type");
+    }
+  }
 };
 
-struct GearSymbols {
-  int row = -1;
-  int column = -1;
-  std::string symbol;
+struct Platform {
+  std::vector<std::vector<Tile>> tiles;
 
-  int adjacentCount = 0;
-  std::vector<std::string> adjacentNumbers = {};
+  std::vector<Tile> GetTiles(TileType type) const {
+    std::vector<Tile> result = {};
+
+    for (const auto& row : tiles) {
+      for (const auto& tile : row) {
+        if (tile.type == type) {
+          result.push_back(tile);
+        }
+      }
+    }
+
+    return result;
+  }
 };
 
-struct PartsAndSymbolsResult {
-  std::vector<Part> parts = {};
-  std::vector<GearSymbols> symbols = {};
-};
-
-PartsAndSymbolsResult FindPartsAndSymbols(const std::vector<std::string>& lines
-) {
-  std::vector<Part> parts = {};
-  std::vector<GearSymbols> symbols = {};
+Platform BuildPlatformFromInput(const std::vector<std::string>& lines) {
+  std::vector<std::vector<Tile>> tiles = {};
 
   for (int row = 0; row < lines.size(); row++) {
     auto line = lines[row];
-    std::string partNumber = "";
-    int rowStart = 0;
-    int columnStart = 0;
 
-    for (int col = 0; col < line.length(); col++) {
-      auto letter = line.at(col);
+    for (int col = 0; col < line.size(); col++) {
+      auto symbolType = Tile::getTypeFromChar(line[col]);
 
-      if (std::isdigit(letter)) {
-        if (partNumber.length() == 0) {
-          rowStart = row;
-          columnStart = col;
-        }
-
-        partNumber.push_back(letter);
-        continue;
+      // add row col vector if not set
+      if (tiles.size() <= row) {
+        tiles.push_back({});
       }
 
-      if (isSymbol(letter)) {
-        symbols.push_back({
-            .row = row,
-            .column = col,
-            .symbol = std::string(1, letter),
-        });
-      }
-
-      // add number and reset START
-      if (partNumber.length()) {
-        parts.push_back({rowStart, columnStart, partNumber});
-
-        partNumber = "";
-      }
-      // END
+      tiles[row].push_back(Tile{symbolType, row, col, row, col});
     }
-
-    // add number and reset START
-    if (partNumber.length()) {
-      parts.push_back({rowStart, columnStart, partNumber});
-
-      // technically you don't have to reset you only want to add what is left
-      // in the memory
-      partNumber = "";
-    }
-    // END
   }
 
-  return {
-      .parts = parts,
-      .symbols = symbols,
-  };
+  return {tiles};
 }
 
 std::vector<std::string> ParseInput(const std::string& filePath) {

@@ -21,6 +21,10 @@
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
+  std::shared_ptr<bool> isTiltedNorth = std::make_shared<bool>(false);
+
+  std::optional<ECS::Entity> tiltTrackerEntity;
+
   std::optional<ECS::Entity> cameraEntity;
   std::optional<ECS::Entity> puzzleSolverEntity1;
   std::optional<ECS::Entity> puzzleSolverEntity2;
@@ -28,13 +32,35 @@ class MinimalLoopStrategy : public Core::IStrategy {
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/arial.ttf", 24);
 
+    // Create UI entities for puzzle solver values
+    tiltTrackerEntity = ECS::Registry::Instance().CreateEntity();
+    ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
+        tiltTrackerEntity.value(),
+        250,
+        50,
+        Vec2(550, 50),
+        true,
+        SDL_Color{0, 0, 255, 255},
+        true
+    );
+
+    auto initialLabel = std::string("Default state");
+    ECS::Registry::Instance().AddComponent<TextComponent>(
+        tiltTrackerEntity.value(),
+        initialLabel,
+        SDL_Color{255, 255, 255, 255},
+        24,
+        true
+    );
+    // UI end
+
     // Systems
     ECS::Registry::Instance().AddSystem<RenderRigidBodiesSystem>();
     ECS::Registry::Instance().AddSystem<KeyboardControlSystem>();
     ECS::Registry::Instance().AddSystem<CollisionSystem>();
     ECS::Registry::Instance().AddSystem<RenderTextSystem>();
     ECS::Registry::Instance().AddSystem<RenderCollidersSystem>();
-    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>();
+    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(isTiltedNorth, tiltTrackerEntity);
     ECS::Registry::Instance().AddSystem<CameraSystem>();
 
     // Events
@@ -44,85 +70,91 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
     ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().SubscribeToEvents(
     );
-    ECS::Registry::Instance().GetSystem<CameraSystem>().SubscribeToEvents(
-    );
+    ECS::Registry::Instance().GetSystem<CameraSystem>().SubscribeToEvents();
 
     // Entities & Components
 
     // Puzzle related entities
-    auto inputData = ParseInput("assets/input-example-1.txt");
-    auto partsAndSymbols = FindPartsAndSymbols(inputData);
+    auto inputData = ParseInput("assets/input.txt");
+    auto platform = BuildPlatformFromInput(inputData);
 
     // Fixed cell size
     const float cellSize = 50.0f;
 
     // Initialize grid system
-    ECS::Registry::Instance().AddSystem<RenderGridSystem>(
-        cellSize,
-        cellSize
-    );
+    ECS::Registry::Instance().AddSystem<RenderGridSystem>(cellSize, cellSize);
 
-    // Create entities for parts
-    for (const auto& part : partsAndSymbols.parts) {
-      ECS::Entity partEntity = ECS::Registry::Instance().CreateEntity();
-      ECS::Registry::Instance().TagEntity(partEntity, "EnginePart");
+    auto cubeShapedRocks = platform.GetTiles(TileType::CUBE_SHAPED_ROCK);
+    for(auto& cubeShapedRock: cubeShapedRocks) {
+      ECS::Entity cubeShapedRockEntity =
+          ECS::Registry::Instance().CreateEntity();
+      ECS::Registry::Instance().GroupEntity(
+          cubeShapedRockEntity,
+          "CubeShapedRock"
+      );
 
-      int scaledX = part.column * cellSize;
-      int scaledY = part.row * cellSize;
-      int scaledWidth = part.number.length() * cellSize;
+      int scaledX = cubeShapedRock.col * cellSize;
+      int scaledY = cubeShapedRock.row * cellSize;
+      int scaledWidth = cellSize;
       int scaledHeight = cellSize;
 
       ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
-          partEntity,
+          cubeShapedRockEntity,
           scaledWidth,
           scaledHeight,
           Vec2(scaledX, scaledY),
           true
       );
 
-      ECS::Registry::Instance().AddComponent<TextComponent>(
-          partEntity,
-          part.number
+      ECS::Registry::Instance().AddComponent<BoxColliderComponent>(
+          cubeShapedRockEntity,
+          scaledWidth -4,
+          scaledHeight - 2,
+          Vec2(2, 1)
       );
 
-      ECS::Registry::Instance().AddComponent<BoxColliderComponent>(
-          partEntity,
-          scaledWidth,
-          scaledHeight,
-          Vec2(0, 0)
+      ECS::Registry::Instance().AddComponent<TextComponent>(
+          cubeShapedRockEntity,
+          "#",
+          SDL_Color{0, 0, 255, 255},
+          24
       );
     }
 
-    // Create entities for symbols
-    for (const auto& symbol : partsAndSymbols.symbols) {
-      ECS::Entity symbolEntity = ECS::Registry::Instance().CreateEntity();
-      ECS::Registry::Instance().TagEntity(symbolEntity, "Symbol");
+    auto roundedShapedRocks = platform.GetTiles(TileType::ROUNDED_ROCK);
+    for(auto& roundedShapedRock : roundedShapedRocks) {
+      ECS::Entity cubeShapedRockEntity =
+          ECS::Registry::Instance().CreateEntity();
+      ECS::Registry::Instance().GroupEntity(
+          cubeShapedRockEntity,
+          "RoundedShapedRock"
+      );
 
-      int scaledX = symbol.column * cellSize;
-      int scaledY = symbol.row * cellSize;
-      int scaledSize = cellSize; // Assuming square size for symbols
+      int scaledX = roundedShapedRock.col * cellSize;
+      int scaledY = roundedShapedRock.row * cellSize;
+      int scaledWidth = cellSize;
+      int scaledHeight = cellSize;
 
       ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
-          symbolEntity,
-          scaledSize,
-          scaledSize,
+          cubeShapedRockEntity,
+          scaledWidth,
+          scaledHeight,
           Vec2(scaledX, scaledY),
           true
       );
 
-      ECS::Registry::Instance().AddComponent<TextComponent>(
-          symbolEntity,
-          symbol.symbol
+      ECS::Registry::Instance().AddComponent<BoxColliderComponent>(
+          cubeShapedRockEntity,
+          scaledWidth - 8,
+          scaledHeight,
+          Vec2(4, 0)
       );
 
-      auto offsetRatio = 5;
-      auto bboxOffset = -scaledSize / offsetRatio;
-
-      ECS::Registry::Instance().AddComponent<BoxColliderComponent>(
-          symbolEntity,
-          scaledSize + (-1 * bboxOffset) * 2,
-          scaledSize + (-1 * bboxOffset) * 2,
-          Vec2(bboxOffset, bboxOffset)
+      ECS::Registry::Instance().AddComponent<TextComponent>(
+          cubeShapedRockEntity,
+          "O",
+          SDL_Color{0, 0, 255, 255},
+          24
       );
     }
 
@@ -136,43 +168,6 @@ class MinimalLoopStrategy : public Core::IStrategy {
     );
 
     // Results
-
-    // Create UI entities for puzzle solver values
-    puzzleSolverEntity1 = ECS::Registry::Instance().CreateEntity();
-    puzzleSolverEntity2 = ECS::Registry::Instance().CreateEntity();
-
-    // Set up the first UI entity
-    ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
-        puzzleSolverEntity1.value(),
-        300, 50,
-        Vec2(500, 50),
-        true,
-        SDL_Color{0, 0, 255, 255},
-        true
-    );
-    ECS::Registry::Instance().AddComponent<TextComponent>(
-        puzzleSolverEntity1.value(),
-        "Puzzle Solver Value 1",
-        SDL_Color{255, 255, 255, 255},
-        24,
-        true
-    );
-
-    ECS::Registry::Instance().AddComponent<RigidBodyComponent>(
-        puzzleSolverEntity2.value(),
-        300, 50,
-        Vec2(500, 100),
-        true,
-        SDL_Color{0, 0, 255, 255},
-        true
-    );
-    ECS::Registry::Instance().AddComponent<TextComponent>(
-        puzzleSolverEntity2.value(),
-        "Puzzle Solver Value 2",
-        SDL_Color{255, 255, 255, 255},
-        24,
-        true
-    );
   }
 
   void HandleEvent(SDL_Event& event) override {
@@ -183,15 +178,16 @@ class MinimalLoopStrategy : public Core::IStrategy {
       Core::Window& window, Core::Renderer& renderer, double deltaTime
   ) override {
     ECS::Registry::Instance().GetSystem<CollisionSystem>().Update();
+    ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().Update();
 
     ECS::Registry::Instance().Update();
 
-    ECS::Registry::Instance()
-        .GetSystem<PuzzleSolverSystem>()
-        .CalculateSumOfAllParts(puzzleSolverEntity1.value());
-    ECS::Registry::Instance()
-        .GetSystem<PuzzleSolverSystem>()
-        .CalculateSumAllGearRatios(puzzleSolverEntity2.value());
+    //    ECS::Registry::Instance()
+    //        .GetSystem<PuzzleSolverSystem>()
+    //        .CalculateSumOfAllParts(puzzleSolverEntity1.value());
+    //    ECS::Registry::Instance()
+    //        .GetSystem<PuzzleSolverSystem>()
+    //        .CalculateSumAllGearRatios(puzzleSolverEntity2.value());
   }
 
   void OnRender(Core::Window& window, Core::Renderer& renderer) override {
@@ -200,13 +196,18 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window
     );
 
-    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(renderer, cameraEntity.value());
+    ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(
+        renderer,
+        cameraEntity.value()
+    );
 
     ECS::Registry::Instance().GetSystem<RenderRigidBodiesSystem>().Render(
         renderer,
         cameraEntity.value()
     );
-    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(renderer, cameraEntity.value());
-
+    ECS::Registry::Instance().GetSystem<RenderTextSystem>().Render(
+        renderer,
+        cameraEntity.value()
+    );
   }
 };

@@ -25,93 +25,132 @@ struct hash<ECS::Entity> {
 
 class PuzzleSolverSystem : public ECS::System {
  public:
-  PuzzleSolverSystem() { RequireComponent<TextComponent>(); }
+  PuzzleSolverSystem(
+      std::shared_ptr<bool> isTiltedNorth,
+      std::optional<ECS::Entity>& tiltTrackerEntity
+  )
+      : isTiltedNorth(isTiltedNorth), tiltTrackerEntity(tiltTrackerEntity) {
+    RequireComponent<TextComponent>();
+  }
 
   void SubscribeToEvents() {
+    Events::Bus::Instance().SubscribeToEvent<KeyPressedEvent>(
+        this,
+        &PuzzleSolverSystem::OnKeyPressed
+    );
+
     Events::Bus::Instance().SubscribeToEvent<CollisionEvent>(
         this,
         &PuzzleSolverSystem::OnCollision
     );
   }
 
-  void OnCollision(CollisionEvent& event) {
-    auto& registry = ECS::Registry::Instance();
-    bool isAEnginePart = registry.DoesEntityHaveTag(event.a, "EnginePart");
-    bool isBEnginePart = registry.DoesEntityHaveTag(event.b, "EnginePart");
-    bool isASymbol = registry.DoesEntityHaveTag(event.a, "Symbol");
-    bool isBSymbol = registry.DoesEntityHaveTag(event.b, "Symbol");
+  void OnCollision(CollisionEvent& event) {}
 
-    // Ensure one is a engine part and the other is a symbol
-    if ((isAEnginePart && isBSymbol) || (isBEnginePart && isASymbol)) {
-      ECS::Entity enginePartEntity = isAEnginePart ? event.a : event.b;
-      ECS::Entity symbolEntity = isASymbol ? event.a : event.b;
-
-      partEntities.insert(enginePartEntity);  // Insert the engine part
-
+  void Update() {
+    //
+    // Move all entities (should be a specific system)
+    auto entities = GetSystemEntities();
+    for (auto entity : entities) {
       auto& rigidBody =
-          registry.GetComponent<RigidBodyComponent>(enginePartEntity);
-      rigidBody.color = {50, 255, 50, 255};
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      rigidBody.position.x += rigidBody.velocity.x;
+      rigidBody.position.y += rigidBody.velocity.y;
+    }
 
-      auto enginePartTextComponent =
-          registry.GetComponent<TextComponent>(enginePartEntity);
+    //
+    // resolve simulation status
+    bool isAnyMovingUp = false;
+    for (auto entity : entities) {
+      auto& rigidBody =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
 
-      auto symbolTextComponent =
-          registry.GetComponent<TextComponent>(symbolEntity);
-      auto symbolRigidBody =
-          registry.GetComponent<RigidBodyComponent>(symbolEntity);
-
-      if (symbolTextComponent.text == "*") {
-        std::string key = std::to_string(symbolRigidBody.position.x) + "-" +
-                          std::to_string(symbolRigidBody.position.y);
-        auto& gearSymbol = gearSymbolsMap[key];
-
-        if (std::find(
-                gearSymbol.adjacentNumbers.begin(),
-                gearSymbol.adjacentNumbers.end(),
-                enginePartTextComponent.text
-            ) == gearSymbol.adjacentNumbers.end()) {
-          gearSymbol.adjacentCount++;
-          gearSymbol.adjacentNumbers.push_back(enginePartTextComponent.text);
-        }
+      if (rigidBody.velocity.y < 0) {
+        isAnyMovingUp = true;
+        break;
       }
     }
+
+    if (!isAnyMovingUp) {
+      simulationStarted = false;
+
+      auto& tiltTrackerTextComponent =
+          ECS::Registry::Instance().GetComponent<TextComponent>(
+              tiltTrackerEntity.value()
+          );
+      tiltTrackerTextComponent.text = "Ended: North";
+    }
+
+    // calculate result
+    //    The amount of load caused by a single rounded rock (O) is equal to the
+    //    number of rows from the rock to the south edge of the platform,
+    //    including the row the rock is on. (Cube-shaped rocks (#) don't
+    //    contribute to load.) So, the amount of load caused by each rock in
+    //    each row is as follows:
+    if(simulationStarted) return;
+
+    auto entitiesByGroup =
+        ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
+    std::unordered_set<ECS::Entity> entitiesSet(
+        entitiesByGroup.begin(),
+        entitiesByGroup.end()
+    );
+    int totalLoad = 0;
+    for (auto entity : entitiesSet) {
+      auto& rigidBody =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      auto totalScaledDiff =
+          (rigidBody.position.y) + 50;
+
+
+      auto& textComponent =
+          ECS::Registry::Instance().GetComponent<TextComponent>(entity);
+
+      auto totalActualDiff = totalScaledDiff / 50;
+
+      auto totalNormalizedDiff = -totalActualDiff + 11;
+
+      int totalRoundedDiff = std::round(totalNormalizedDiff);
+
+      std::cout << "Total rounded diff: " << totalRoundedDiff << std::endl;
+      totalLoad += totalRoundedDiff;
+
+      textComponent.text = std::string("O ") + std::to_string(totalRoundedDiff);
+    }
+
+    std::cout << "Total load: " << totalLoad << std::endl;
   }
 
-  void CalculateSumAllGearRatios(ECS::Entity& scoreEntity) {
-    int sumOfAllGearRatios = 0;
-    for (auto& [key, gearSymbol] : gearSymbolsMap) {
-      if (gearSymbol.adjacentCount == 2) {
-        auto gearRatio = std::stoi(gearSymbol.adjacentNumbers[0]) *
-                         std::stoi(gearSymbol.adjacentNumbers[1]);
-        sumOfAllGearRatios += gearRatio;
-      }
+  void OnKeyPressed(KeyPressedEvent& event) {
+    switch (event.symbol) {
+      case SDLK_n:
+        StartSimulation();
+        break;
     }
-
-    auto& textComponent =
-        ECS::Registry::Instance().GetComponent<TextComponent>(scoreEntity);
-    textComponent.text =
-        "Gear Ratios Sum: " + std::to_string(sumOfAllGearRatios);
-  }
-
-  void CalculateSumOfAllParts(ECS::Entity& scoreEntity) {
-    sumOfParts = 0;  // Reset sum before calculation
-
-    for (auto& entity : partEntities) {
-      if (ECS::Registry::Instance().HasComponent<TextComponent>(entity)) {
-        auto& textComponent =
-            ECS::Registry::Instance().GetComponent<TextComponent>(entity);
-        sumOfParts += std::stoi(textComponent.text
-        );
-      }
-    }
-
-    auto& textComponent =
-        ECS::Registry::Instance().GetComponent<TextComponent>(scoreEntity);
-    textComponent.text = "Parts Sum: " + std::to_string(sumOfParts);
   }
 
  private:
-  std::unordered_set<ECS::Entity> partEntities;
-  std::unordered_map<std::string, GearSymbols> gearSymbolsMap = {};
-  int sumOfParts = 0;
+  bool simulationStarted = false;
+
+  void StartSimulation() {
+    auto& tiltTrackerTextComponent =
+        ECS::Registry::Instance().GetComponent<TextComponent>(
+            tiltTrackerEntity.value()
+        );
+    tiltTrackerTextComponent.text = "Started: North";
+
+    *isTiltedNorth = true;
+    simulationStarted = true;
+
+    auto entities =
+        ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
+    for (auto entity : entities) {
+      auto& rigidBody =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      rigidBody.velocity.y = -10;
+    }
+  }
+
+  std::shared_ptr<bool> isTiltedNorth;
+  std::optional<ECS::Entity> tiltTrackerEntity;
 };
