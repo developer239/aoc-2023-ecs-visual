@@ -19,7 +19,7 @@
 #include "../systems/RenderRigidBodiesSystem.h"
 #include "../systems/RenderTextSystem.h"
 
-const float SCALE = 50.0f;
+const float SCALE = 10.0f;
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
@@ -64,7 +64,11 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddSystem<CollisionSystem>();
     ECS::Registry::Instance().AddSystem<RenderTextSystem>();
     ECS::Registry::Instance().AddSystem<RenderCollidersSystem>();
-    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(isTiltedNorth, tiltTrackerEntity, simulationStarted);
+    ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(
+        isTiltedNorth,
+        tiltTrackerEntity,
+        simulationStarted
+    );
     ECS::Registry::Instance().AddSystem<CameraSystem>();
 
     // Events
@@ -79,7 +83,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Entities & Components
 
     // Puzzle related entities
-    auto inputData = ParseInput("assets/input-example-1.txt");
+    auto inputData = ParseInput("assets/input.txt");
     auto platform = BuildPlatformFromInput(inputData);
 
     // Fixed cell size
@@ -89,7 +93,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddSystem<RenderGridSystem>(cellSize, cellSize);
 
     auto cubeShapedRocks = platform.GetTiles(TileType::CUBE_SHAPED_ROCK);
-    for(auto& cubeShapedRock: cubeShapedRocks) {
+    for (auto& cubeShapedRock : cubeShapedRocks) {
       ECS::Entity cubeShapedRockEntity =
           ECS::Registry::Instance().CreateEntity();
       ECS::Registry::Instance().GroupEntity(
@@ -112,7 +116,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
       ECS::Registry::Instance().AddComponent<BoxColliderComponent>(
           cubeShapedRockEntity,
-          scaledWidth -4,
+          scaledWidth - 4,
           scaledHeight - 2,
           Vec2(2, 1),
           SDL_Color{0, 0, 255, 0}
@@ -120,14 +124,14 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
       ECS::Registry::Instance().AddComponent<TextComponent>(
           cubeShapedRockEntity,
-          "#",
+          "",
           SDL_Color{0, 0, 255, 255},
-          24
+          6
       );
     }
 
     auto roundedShapedRocks = platform.GetTiles(TileType::ROUNDED_ROCK);
-    for(auto& roundedShapedRock : roundedShapedRocks) {
+    for (auto& roundedShapedRock : roundedShapedRocks) {
       ECS::Entity cubeShapedRockEntity =
           ECS::Registry::Instance().CreateEntity();
       ECS::Registry::Instance().GroupEntity(
@@ -153,14 +157,14 @@ class MinimalLoopStrategy : public Core::IStrategy {
           scaledWidth - 8,
           scaledHeight,
           Vec2(4, 0),
-                SDL_Color{0, 0, 255, 0}
+          SDL_Color{0, 0, 255, 0}
       );
 
       ECS::Registry::Instance().AddComponent<TextComponent>(
           cubeShapedRockEntity,
-          "O",
+          "",
           SDL_Color{0, 0, 255, 255},
-          24
+          6
       );
     }
 
@@ -183,7 +187,9 @@ class MinimalLoopStrategy : public Core::IStrategy {
   void OnUpdate(
       Core::Window& window, Core::Renderer& renderer, double deltaTime
   ) override {
+
     ECS::Registry::Instance().GetSystem<CollisionSystem>().Update();
+
     ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().Update();
 
     ECS::Registry::Instance().Update();
@@ -202,7 +208,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window
     );
 
-    if(!*simulationStarted || alwaysShowSimulation) {
+    if (!*simulationStarted || alwaysShowSimulation) {
       ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(
           renderer,
           cameraEntity.value()

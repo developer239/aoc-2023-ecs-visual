@@ -21,7 +21,7 @@ set(SOURCES
         src/systems/RenderGridSystem.h
         src/systems/RenderColliderSystem.h
         src/systems/PuzzleSolverSystem.h
-        src/components/CameraComponent.h src/systems/CameraSystem.h)
+        src/components/CameraComponent.h src/systems/CameraSystem.h src/services/ThreadPool.h)
 
 add_executable(${APP_NAME} ${SOURCES})
 

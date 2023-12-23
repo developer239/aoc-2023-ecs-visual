@@ -7,6 +7,10 @@
 #include "../components/RigidBodyComponent.h"
 #include "../events/CollisionEvent.h"
 
+#include <functional>  // For std::reference_wrapper
+#include <tuple>
+#include <vector>
+
 class CollisionSystem : public ECS::System {
  public:
   CollisionSystem() {
@@ -14,56 +18,88 @@ class CollisionSystem : public ECS::System {
     RequireComponent<BoxColliderComponent>();
   }
 
-  void Update() {
+  void PreCalculatePairs() {
     auto entities = GetSystemEntities();
+    collisionPairs.clear();
 
     for (auto i = entities.begin(); i != entities.end(); ++i) {
-      ECS::Entity a = *i;
-      auto& aRigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(a);
-      auto& aCollider = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(a);
-
-      // Prevent entities from getting outside of the screen boundaries
-      if (aRigidBody.position.x < 0 || aRigidBody.position.y < 0) {
-        aRigidBody.velocity.x = 0;
-        aRigidBody.velocity.y = 0;
-      }
+      auto& rigidBodyA =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*i);
+      auto& colliderA =
+          ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*i);
 
       for (auto j = std::next(i); j != entities.end(); ++j) {
-        ECS::Entity b = *j;
-        auto& bRigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(b);
-        auto& bCollider = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(b);
+        auto& rigidBodyB =
+            ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*j);
+        auto& colliderB =
+            ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*j);
 
-        // Prevent entities from getting outside of the screen boundaries
-        if (bRigidBody.position.x < 0 || bRigidBody.position.y < 0) {
-          bRigidBody.velocity.x = 0;
-          bRigidBody.velocity.y = 0;
-        }
-
-        // Only check for collisions if exactly one entity has non-zero vertical velocity
-        if (!((aRigidBody.velocity.y != 0) ^ (bRigidBody.velocity.y != 0))) {
-          continue;
-        }
-
-        bool collisionHappened = CheckAABBCollision(
-            aRigidBody.position.x + aCollider.offset.x,
-            aRigidBody.position.y + aCollider.offset.y,
-            aCollider.width,
-            aCollider.height,
-            bRigidBody.position.x + bCollider.offset.x,
-            bRigidBody.position.y + bCollider.offset.y,
-            bCollider.width,
-            bCollider.height
+        collisionPairs.emplace_back(
+            *i,
+            std::ref(rigidBodyA),
+            std::ref(colliderA),
+            *j,
+            std::ref(rigidBodyB),
+            std::ref(colliderB)
         );
-
-        if (collisionHappened) {
-          Events::Bus::Instance().EmitEvent<CollisionEvent>(a, b);
-
-          aRigidBody.velocity.x = 0;
-          aRigidBody.velocity.y = 0;
-          bRigidBody.velocity.x = 0;
-          bRigidBody.velocity.y = 0;
-        }
       }
+    }
+  }
+
+  void Update() {
+    if (collisionPairs.empty()) {
+      PreCalculatePairs();
+    }
+
+    for (const auto& [entityA, rigidBodyARef, colliderARef, entityB, rigidBodyBRef, colliderBRef] :
+         collisionPairs) {
+      auto& rigidBodyA = rigidBodyARef.get();
+      auto& colliderA = colliderARef.get();
+      auto& rigidBodyB = rigidBodyBRef.get();
+      auto& colliderB = colliderBRef.get();
+
+      PreventBoundaryEscape(rigidBodyA);
+      PreventBoundaryEscape(rigidBodyB);
+
+      bool collisionHappened = CheckAABBCollision(
+          rigidBodyA.position.x + colliderA.offset.x,
+          rigidBodyA.position.y + colliderA.offset.y,
+          colliderA.width,
+          colliderA.height,
+          rigidBodyB.position.x + colliderB.offset.x,
+          rigidBodyB.position.y + colliderB.offset.y,
+          colliderB.width,
+          colliderB.height
+      );
+
+      if (collisionHappened) {
+        Events::Bus::Instance().EmitEvent<CollisionEvent>(entityA, entityB);
+        rigidBodyA.velocity.x = 0;
+        rigidBodyA.velocity.y = 0;
+        rigidBodyB.velocity.x = 0;
+        rigidBodyB.velocity.y = 0;
+      }
+    }
+  }
+
+ private:
+  struct RigidBodyAndColliderRef {
+    ECS::Entity entity;
+    std::reference_wrapper<RigidBodyComponent> rigidBody;
+    std::reference_wrapper<BoxColliderComponent> collider;
+  };
+
+  std::vector<std::tuple<
+      ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
+      std::reference_wrapper<BoxColliderComponent>, ECS::Entity,
+      std::reference_wrapper<RigidBodyComponent>,
+      std::reference_wrapper<BoxColliderComponent>>>
+      collisionPairs;
+
+  void PreventBoundaryEscape(RigidBodyComponent& rigidBody) {
+    if (rigidBody.position.x < 0 || rigidBody.position.y < 0) {
+      rigidBody.velocity.x = 0;
+      rigidBody.velocity.y = 0;
     }
   }
 
