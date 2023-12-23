@@ -90,10 +90,9 @@ class PuzzleSolverSystem : public ECS::System {
     //    including the row the rock is on. (Cube-shaped rocks (#) don't
     //    contribute to load.) So, the amount of load caused by each rock in
     //    each row is as follows:
-    if (*simulationStarted) return;
 
-    const float SCALE = 25.0f;
-    int HEIGHT = 100 + 1;
+    const float SCALE = 50.0f;
+    int HEIGHT = 10 + 1;
 
     auto entitiesByGroup =
         ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
@@ -122,7 +121,11 @@ class PuzzleSolverSystem : public ECS::System {
       textComponent.text = std::string("O ") + std::to_string(totalRoundedDiff);
     }
 
-    std::cout << "Total load: " << totalLoad << std::endl;
+    auto& tiltTrackerTextComponent =
+        ECS::Registry::Instance().GetComponent<TextComponent>(
+            tiltTrackerEntity.value()
+        );
+    tiltTrackerTextComponent.text = "Total Load: " + std::to_string(totalLoad);
   }
 
   void OnKeyPressed(KeyPressedEvent& event) {
@@ -149,7 +152,7 @@ class PuzzleSolverSystem : public ECS::System {
     for (auto entity : entities) {
       auto& rigidBody =
           ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      rigidBody.velocity.y = -1;
+      rigidBody.velocity.y = -0.5;
     }
   }
 

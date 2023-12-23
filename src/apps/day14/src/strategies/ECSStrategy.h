@@ -19,7 +19,7 @@
 #include "../systems/RenderRigidBodiesSystem.h"
 #include "../systems/RenderTextSystem.h"
 
-const float SCALE = 25.0f;
+const float SCALE = 50.0f;
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
@@ -114,7 +114,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
           cubeShapedRockEntity,
           scaledWidth -4,
           scaledHeight - 2,
-          Vec2(2, 1)
+          Vec2(2, 1),
+          SDL_Color{0, 0, 255, 0}
       );
 
       ECS::Registry::Instance().AddComponent<TextComponent>(
@@ -151,7 +152,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
           cubeShapedRockEntity,
           scaledWidth - 8,
           scaledHeight,
-          Vec2(4, 0)
+          Vec2(4, 0),
+                SDL_Color{0, 0, 255, 0}
       );
 
       ECS::Registry::Instance().AddComponent<TextComponent>(

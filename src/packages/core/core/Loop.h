@@ -26,7 +26,7 @@ class Loop {
   double deltaTime = 0;
   double fpsLimit = 60;
 
-  explicit Loop(std::vector<IStrategy*> strategies, int windowWidth = 800, int windowHeight = 600, const char *title = "AoC 2023 Day 3");
+  explicit Loop(std::vector<IStrategy*> strategies, int windowWidth = 800, int windowHeight = 600, const char *title = "AoC 2023 Day 14");
 
   void AddStrategy(IStrategy* strategy);
 
