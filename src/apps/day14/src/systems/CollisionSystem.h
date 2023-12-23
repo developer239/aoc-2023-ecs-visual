@@ -17,24 +17,32 @@ class CollisionSystem : public ECS::System {
   void Update() {
     auto entities = GetSystemEntities();
 
-    for (auto i = entities.begin(); i != entities.end(); i++) {
+    for (auto i = entities.begin(); i != entities.end(); ++i) {
       ECS::Entity a = *i;
-      auto& aRigidBody =
-          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(a);
-      auto& aCollider =
-          ECS::Registry::Instance().GetComponent<BoxColliderComponent>(a);
+      auto& aRigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(a);
+      auto& aCollider = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(a);
 
-      for (auto j = i; j != entities.end(); j++) {
+      // Prevent entities from getting outside of the screen boundaries
+      if (aRigidBody.position.x < 0 || aRigidBody.position.y < 0) {
+        aRigidBody.velocity.x = 0;
+        aRigidBody.velocity.y = 0;
+      }
+
+      for (auto j = std::next(i); j != entities.end(); ++j) {
         ECS::Entity b = *j;
+        auto& bRigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(b);
+        auto& bCollider = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(b);
 
-        if (a == b) {
-          continue;
+        // Prevent entities from getting outside of the screen boundaries
+        if (bRigidBody.position.x < 0 || bRigidBody.position.y < 0) {
+          bRigidBody.velocity.x = 0;
+          bRigidBody.velocity.y = 0;
         }
 
-        auto& bRigidBody =
-            ECS::Registry::Instance().GetComponent<RigidBodyComponent>(b);
-        auto& bCollider =
-            ECS::Registry::Instance().GetComponent<BoxColliderComponent>(b);
+        // Only check for collisions if exactly one entity has non-zero vertical velocity
+        if (!((aRigidBody.velocity.y != 0) ^ (bRigidBody.velocity.y != 0))) {
+          continue;
+        }
 
         bool collisionHappened = CheckAABBCollision(
             aRigidBody.position.x + aCollider.offset.x,
@@ -52,15 +60,6 @@ class CollisionSystem : public ECS::System {
 
           aRigidBody.velocity.x = 0;
           aRigidBody.velocity.y = 0;
-          bRigidBody.velocity.x = 0;
-          bRigidBody.velocity.y = 0;
-        }
-
-        if (aRigidBody.position.x < 0 || aRigidBody.position.y < 0) {
-          aRigidBody.velocity.x = 0;
-          aRigidBody.velocity.y = 0;
-        }
-        if (bRigidBody.position.x < 0 || bRigidBody.position.y < 0) {
           bRigidBody.velocity.x = 0;
           bRigidBody.velocity.y = 0;
         }

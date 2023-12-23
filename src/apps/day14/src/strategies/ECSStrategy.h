@@ -19,8 +19,11 @@
 #include "../systems/RenderRigidBodiesSystem.h"
 #include "../systems/RenderTextSystem.h"
 
+const float SCALE = 25.0f;
+
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
+  bool alwaysShowSimulation = true;
   std::shared_ptr<bool> isTiltedNorth = std::make_shared<bool>(false);
   std::shared_ptr<bool> simulationStarted = std::make_shared<bool>(false);
 
@@ -80,7 +83,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     auto platform = BuildPlatformFromInput(inputData);
 
     // Fixed cell size
-    const float cellSize = 50.0f;
+    const float cellSize = SCALE;
 
     // Initialize grid system
     ECS::Registry::Instance().AddSystem<RenderGridSystem>(cellSize, cellSize);
@@ -197,7 +200,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
         window
     );
 
-    if(!*simulationStarted) {
+    if(!*simulationStarted || alwaysShowSimulation) {
       ECS::Registry::Instance().GetSystem<RenderCollidersSystem>().Render(
           renderer,
           cameraEntity.value()

@@ -30,7 +30,9 @@ class PuzzleSolverSystem : public ECS::System {
       std::optional<ECS::Entity>& tiltTrackerEntity,
       std::shared_ptr<bool> simulationStarted
   )
-      : isTiltedNorth(isTiltedNorth), tiltTrackerEntity(tiltTrackerEntity), simulationStarted(simulationStarted) {
+      : isTiltedNorth(isTiltedNorth),
+        tiltTrackerEntity(tiltTrackerEntity),
+        simulationStarted(simulationStarted) {
     RequireComponent<TextComponent>();
   }
 
@@ -88,7 +90,10 @@ class PuzzleSolverSystem : public ECS::System {
     //    including the row the rock is on. (Cube-shaped rocks (#) don't
     //    contribute to load.) So, the amount of load caused by each rock in
     //    each row is as follows:
-    if(*simulationStarted) return;
+    if (*simulationStarted) return;
+
+    const float SCALE = 25.0f;
+    int HEIGHT = 100 + 1;
 
     auto entitiesByGroup =
         ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
@@ -100,16 +105,14 @@ class PuzzleSolverSystem : public ECS::System {
     for (auto entity : entitiesSet) {
       auto& rigidBody =
           ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      auto totalScaledDiff =
-          (rigidBody.position.y) + 50;
-
+      auto totalScaledDiff = (rigidBody.position.y) + SCALE;
 
       auto& textComponent =
           ECS::Registry::Instance().GetComponent<TextComponent>(entity);
 
-      auto totalActualDiff = totalScaledDiff / 50;
+      auto totalActualDiff = totalScaledDiff / SCALE;
 
-      auto totalNormalizedDiff = -totalActualDiff + 11;
+      auto totalNormalizedDiff = -totalActualDiff + HEIGHT;
 
       int totalRoundedDiff = std::round(totalNormalizedDiff);
 
