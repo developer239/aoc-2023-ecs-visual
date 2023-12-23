@@ -7,7 +7,7 @@
 #include "../components/RigidBodyComponent.h"
 #include "../events/CollisionEvent.h"
 
-#include <functional>  // For std::reference_wrapper
+#include <functional>
 #include <tuple>
 #include <vector>
 
@@ -23,24 +23,16 @@ class CollisionSystem : public ECS::System {
     collisionPairs.clear();
 
     for (auto i = entities.begin(); i != entities.end(); ++i) {
-      auto& rigidBodyA =
-          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*i);
-      auto& colliderA =
-          ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*i);
+      auto& rigidBodyA = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*i);
+      auto& colliderA = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*i);
 
       for (auto j = std::next(i); j != entities.end(); ++j) {
-        auto& rigidBodyB =
-            ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*j);
-        auto& colliderB =
-            ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*j);
+        auto& rigidBodyB = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*j);
+        auto& colliderB = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*j);
 
         collisionPairs.emplace_back(
-            *i,
-            std::ref(rigidBodyA),
-            std::ref(colliderA),
-            *j,
-            std::ref(rigidBodyB),
-            std::ref(colliderB)
+            *i, std::ref(rigidBodyA), std::ref(colliderA),
+            *j, std::ref(rigidBodyB), std::ref(colliderB)
         );
       }
     }
@@ -51,8 +43,9 @@ class CollisionSystem : public ECS::System {
       PreCalculatePairs();
     }
 
-    for (const auto& [entityA, rigidBodyARef, colliderARef, entityB, rigidBodyBRef, colliderBRef] :
-         collisionPairs) {
+    MoveEntities();  // Handle the movement of entities
+
+    for (const auto& [entityA, rigidBodyARef, colliderARef, entityB, rigidBodyBRef, colliderBRef] : collisionPairs) {
       auto& rigidBodyA = rigidBodyARef.get();
       auto& colliderA = colliderARef.get();
       auto& rigidBodyB = rigidBodyBRef.get();
@@ -83,18 +76,19 @@ class CollisionSystem : public ECS::System {
   }
 
  private:
-  struct RigidBodyAndColliderRef {
-    ECS::Entity entity;
-    std::reference_wrapper<RigidBodyComponent> rigidBody;
-    std::reference_wrapper<BoxColliderComponent> collider;
-  };
+  std::vector<std::tuple<ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
+                         std::reference_wrapper<BoxColliderComponent>,
+                         ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
+                         std::reference_wrapper<BoxColliderComponent>>> collisionPairs;
 
-  std::vector<std::tuple<
-      ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
-      std::reference_wrapper<BoxColliderComponent>, ECS::Entity,
-      std::reference_wrapper<RigidBodyComponent>,
-      std::reference_wrapper<BoxColliderComponent>>>
-      collisionPairs;
+  void MoveEntities() {
+    auto entities = GetSystemEntities();
+    for (auto entity : entities) {
+      auto& rigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      rigidBody.position.x += rigidBody.velocity.x;
+      rigidBody.position.y += rigidBody.velocity.y;
+    }
+  }
 
   void PreventBoundaryEscape(RigidBodyComponent& rigidBody) {
     if (rigidBody.position.x < 0 || rigidBody.position.y < 0) {
@@ -103,10 +97,7 @@ class CollisionSystem : public ECS::System {
     }
   }
 
-  bool CheckAABBCollision(
-      double aX, double aY, double aW, double aH, double bX, double bY,
-      double bW, double bH
-  ) {
+  bool CheckAABBCollision(double aX, double aY, double aW, double aH, double bX, double bY, double bW, double bH) {
     return (aX < bX + bW && aX + aW > bX && aY < bY + bH && aY + aH > bY);
   }
 };

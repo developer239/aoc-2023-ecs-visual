@@ -54,12 +54,6 @@ class PuzzleSolverSystem : public ECS::System {
     //
     // Move all entities (should be a specific system)
     auto entities = GetSystemEntities();
-    for (auto entity : entities) {
-      auto& rigidBody =
-          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      rigidBody.position.x += rigidBody.velocity.x;
-      rigidBody.position.y += rigidBody.velocity.y;
-    }
 
     //
     // resolve simulation status
