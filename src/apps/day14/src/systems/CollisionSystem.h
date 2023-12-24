@@ -9,85 +9,118 @@
 
 #include <functional>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 class CollisionSystem : public ECS::System {
  public:
-  CollisionSystem() {
+  float scale;
+
+  CollisionSystem(float scale) : scale(scale) {
     RequireComponent<RigidBodyComponent>();
     RequireComponent<BoxColliderComponent>();
   }
 
   void PreCalculatePairs() {
     auto entities = GetSystemEntities();
-    collisionPairs.clear();
+    collisionPairsByColumn.clear();
 
     for (auto i = entities.begin(); i != entities.end(); ++i) {
-      auto& rigidBodyA = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*i);
-      auto& colliderA = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*i);
+      auto& rigidBodyA =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*i);
+      auto& colliderA =
+          ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*i);
+      int columnA = GetColumn(rigidBodyA);
 
       for (auto j = std::next(i); j != entities.end(); ++j) {
-        auto& rigidBodyB = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*j);
-        auto& colliderB = ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*j);
+        auto& rigidBodyB =
+            ECS::Registry::Instance().GetComponent<RigidBodyComponent>(*j);
+        auto& colliderB =
+            ECS::Registry::Instance().GetComponent<BoxColliderComponent>(*j);
+        int columnB = GetColumn(rigidBodyB);
 
-        collisionPairs.emplace_back(
-            *i, std::ref(rigidBodyA), std::ref(colliderA),
-            *j, std::ref(rigidBodyB), std::ref(colliderB)
-        );
+        if (columnA == columnB) {
+          collisionPairsByColumn[columnA].emplace_back(
+              *i,
+              std::ref(rigidBodyA),
+              std::ref(colliderA),
+              *j,
+              std::ref(rigidBodyB),
+              std::ref(colliderB)
+          );
+        }
       }
     }
   }
 
-  void Update() {
-    if (collisionPairs.empty()) {
+  void MoveEntities(int column) {
+    auto entities = GetSystemEntities();
+
+    for (auto entity : entities) {
+      auto& rigidBody =
+          ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
+      int entityColumn = GetColumn(rigidBody);
+
+      if (entityColumn == column) {
+        rigidBody.position.x += rigidBody.velocity.x;
+        rigidBody.position.y += rigidBody.velocity.y;
+      }
+    }
+  }
+
+  void Update(int column) {
+    if (collisionPairsByColumn.empty()) {
       PreCalculatePairs();
     }
 
-    MoveEntities();  // Handle the movement of entities
+    MoveEntities(column);
 
-    for (const auto& [entityA, rigidBodyARef, colliderARef, entityB, rigidBodyBRef, colliderBRef] : collisionPairs) {
-      auto& rigidBodyA = rigidBodyARef.get();
-      auto& colliderA = colliderARef.get();
-      auto& rigidBodyB = rigidBodyBRef.get();
-      auto& colliderB = colliderBRef.get();
+    if (collisionPairsByColumn.find(column) != collisionPairsByColumn.end()) {
+      for (const auto& pair : collisionPairsByColumn[column]) {
+        auto& rigidBodyA = std::get<1>(pair).get();
+        auto& colliderA = std::get<2>(pair).get();
+        auto& rigidBodyB = std::get<4>(pair).get();
+        auto& colliderB = std::get<5>(pair).get();
 
-      PreventBoundaryEscape(rigidBodyA);
-      PreventBoundaryEscape(rigidBodyB);
+        PreventBoundaryEscape(rigidBodyA);
+        PreventBoundaryEscape(rigidBodyB);
 
-      bool collisionHappened = CheckAABBCollision(
-          rigidBodyA.position.x + colliderA.offset.x,
-          rigidBodyA.position.y + colliderA.offset.y,
-          colliderA.width,
-          colliderA.height,
-          rigidBodyB.position.x + colliderB.offset.x,
-          rigidBodyB.position.y + colliderB.offset.y,
-          colliderB.width,
-          colliderB.height
-      );
+        bool collisionHappened = CheckAABBCollision(
+            rigidBodyA.position.x + colliderA.offset.x,
+            rigidBodyA.position.y + colliderA.offset.y,
+            colliderA.width,
+            colliderA.height,
+            rigidBodyB.position.x + colliderB.offset.x,
+            rigidBodyB.position.y + colliderB.offset.y,
+            colliderB.width,
+            colliderB.height
+        );
 
-      if (collisionHappened) {
-        Events::Bus::Instance().EmitEvent<CollisionEvent>(entityA, entityB);
-        rigidBodyA.velocity.x = 0;
-        rigidBodyA.velocity.y = 0;
-        rigidBodyB.velocity.x = 0;
-        rigidBodyB.velocity.y = 0;
+        if (collisionHappened) {
+          Events::Bus::Instance().EmitEvent<CollisionEvent>(
+              std::get<0>(pair),
+              std::get<3>(pair)
+          );
+          rigidBodyA.velocity.x = 0;
+          rigidBodyA.velocity.y = 0;
+          rigidBodyB.velocity.x = 0;
+          rigidBodyB.velocity.y = 0;
+        }
       }
     }
   }
 
  private:
-  std::vector<std::tuple<ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
-                         std::reference_wrapper<BoxColliderComponent>,
-                         ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
-                         std::reference_wrapper<BoxColliderComponent>>> collisionPairs;
+  std::unordered_map<
+      int, std::vector<std::tuple<
+               ECS::Entity, std::reference_wrapper<RigidBodyComponent>,
+               std::reference_wrapper<BoxColliderComponent>, ECS::Entity,
+               std::reference_wrapper<RigidBodyComponent>,
+               std::reference_wrapper<BoxColliderComponent>>>>
+      collisionPairsByColumn;
 
-  void MoveEntities() {
-    auto entities = GetSystemEntities();
-    for (auto entity : entities) {
-      auto& rigidBody = ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      rigidBody.position.x += rigidBody.velocity.x;
-      rigidBody.position.y += rigidBody.velocity.y;
-    }
+  int GetColumn(const RigidBodyComponent& rigidBody) {
+    return static_cast<int>(rigidBody.position.x / scale);
   }
 
   void PreventBoundaryEscape(RigidBodyComponent& rigidBody) {
@@ -97,7 +130,10 @@ class CollisionSystem : public ECS::System {
     }
   }
 
-  bool CheckAABBCollision(double aX, double aY, double aW, double aH, double bX, double bY, double bW, double bH) {
+  bool CheckAABBCollision(
+      double aX, double aY, double aW, double aH, double bX, double bY,
+      double bW, double bH
+  ) {
     return (aX < bX + bW && aX + aW > bX && aY < bY + bH && aY + aH > bY);
   }
 };

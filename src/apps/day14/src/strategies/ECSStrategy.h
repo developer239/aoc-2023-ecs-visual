@@ -19,11 +19,11 @@
 #include "../systems/RenderRigidBodiesSystem.h"
 #include "../systems/RenderTextSystem.h"
 
-std::string filePath = "assets/input-example-1.txt";
+std::string filePath = "assets/input.txt";
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
-  float scale = 50.0f;
+  float scale = 10.0f;
   int numRows = 0;
   int numCols = 0;
 
@@ -72,7 +72,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
     // Systems
     ECS::Registry::Instance().AddSystem<RenderRigidBodiesSystem>();
     ECS::Registry::Instance().AddSystem<KeyboardControlSystem>();
-    ECS::Registry::Instance().AddSystem<CollisionSystem>();
+    ECS::Registry::Instance().AddSystem<CollisionSystem>(scale);
     ECS::Registry::Instance().AddSystem<RenderTextSystem>();
     ECS::Registry::Instance().AddSystem<RenderCollidersSystem>();
     ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(
@@ -198,7 +198,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
       Core::Window& window, Core::Renderer& renderer, double deltaTime
   ) override {
 
-    ECS::Registry::Instance().GetSystem<CollisionSystem>().Update();
+    ECS::Registry::Instance().GetSystem<CollisionSystem>().Update(1);
 
     ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().Update();
 
