@@ -28,11 +28,14 @@ class PuzzleSolverSystem : public ECS::System {
   PuzzleSolverSystem(
       std::shared_ptr<bool> isTiltedNorth,
       std::optional<ECS::Entity>& tiltTrackerEntity,
-      std::shared_ptr<bool> simulationStarted
+      std::shared_ptr<bool> simulationStarted,
+      float scale,
+      int numRows,
+      int numCols
   )
       : isTiltedNorth(isTiltedNorth),
         tiltTrackerEntity(tiltTrackerEntity),
-        simulationStarted(simulationStarted) {
+        simulationStarted(simulationStarted), scale(scale), numRows(numRows), numCols(numCols) {
     RequireComponent<TextComponent>();
   }
 
@@ -88,8 +91,8 @@ class PuzzleSolverSystem : public ECS::System {
       return;
     }
 
-    const float SCALE = 10.0f;
-    int HEIGHT = 100 + 1;
+    const float SCALE = scale;
+    int HEIGHT = numRows + 1;
 
     auto entitiesByGroup =
         ECS::Registry::Instance().GetEntitiesByGroup("RoundedShapedRock");
@@ -134,6 +137,10 @@ class PuzzleSolverSystem : public ECS::System {
   }
 
  private:
+  float scale = 10.0f;
+  int numRows = 0;
+  int numCols = 0;
+
   void StartSimulation() {
     auto& tiltTrackerTextComponent =
         ECS::Registry::Instance().GetComponent<TextComponent>(

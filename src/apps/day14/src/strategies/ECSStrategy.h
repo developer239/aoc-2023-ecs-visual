@@ -19,10 +19,14 @@
 #include "../systems/RenderRigidBodiesSystem.h"
 #include "../systems/RenderTextSystem.h"
 
-const float SCALE = 10.0f;
+std::string filePath = "assets/input-example-1.txt";
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
+  float scale = 50.0f;
+  int numRows = 0;
+  int numCols = 0;
+
   bool alwaysShowSimulation = true;
   std::shared_ptr<bool> isTiltedNorth = std::make_shared<bool>(false);
   std::shared_ptr<bool> simulationStarted = std::make_shared<bool>(false);
@@ -35,6 +39,13 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/arial.ttf", 24);
+
+    // Puzzle related entities
+    auto inputData = ParseInput(filePath);
+    auto platform = BuildPlatformFromInput(inputData);
+
+    numRows = platform.tiles.size();
+    numCols = platform.tiles[0].size();
 
     // Create UI entities for puzzle solver values
     tiltTrackerEntity = ECS::Registry::Instance().CreateEntity();
@@ -67,7 +78,10 @@ class MinimalLoopStrategy : public Core::IStrategy {
     ECS::Registry::Instance().AddSystem<PuzzleSolverSystem>(
         isTiltedNorth,
         tiltTrackerEntity,
-        simulationStarted
+        simulationStarted,
+        scale,
+        numRows,
+        numCols
     );
     ECS::Registry::Instance().AddSystem<CameraSystem>();
 
@@ -82,12 +96,8 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
     // Entities & Components
 
-    // Puzzle related entities
-    auto inputData = ParseInput("assets/input.txt");
-    auto platform = BuildPlatformFromInput(inputData);
-
     // Fixed cell size
-    const float cellSize = SCALE;
+    const float cellSize = scale;
 
     // Initialize grid system
     ECS::Registry::Instance().AddSystem<RenderGridSystem>(cellSize, cellSize);
