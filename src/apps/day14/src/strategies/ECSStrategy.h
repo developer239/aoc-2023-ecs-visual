@@ -1,5 +1,6 @@
 #pragma once
 
+#include <future>
 #include <optional>
 
 #include "core/AssetStore.h"
@@ -23,7 +24,7 @@ std::string filePath = "assets/input.txt";
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
-  float scale = 10.0f;
+  float scale = 20.0f;
   int numRows = 0;
   int numCols = 0;
 
@@ -198,18 +199,18 @@ class MinimalLoopStrategy : public Core::IStrategy {
       Core::Window& window, Core::Renderer& renderer, double deltaTime
   ) override {
 
-    ECS::Registry::Instance().GetSystem<CollisionSystem>().Update(1);
+    for (int column = 0; column < numCols; column++) {
+      auto future = std::async(
+          std::launch::async,
+          &CollisionSystem::Update,
+          &ECS::Registry::Instance().GetSystem<CollisionSystem>(),
+          column
+      );
+    }
 
     ECS::Registry::Instance().GetSystem<PuzzleSolverSystem>().Update();
 
     ECS::Registry::Instance().Update();
-
-    //    ECS::Registry::Instance()
-    //        .GetSystem<PuzzleSolverSystem>()
-    //        .CalculateSumOfAllParts(puzzleSolverEntity1.value());
-    //    ECS::Registry::Instance()
-    //        .GetSystem<PuzzleSolverSystem>()
-    //        .CalculateSumAllGearRatios(puzzleSolverEntity2.value());
   }
 
   void OnRender(Core::Window& window, Core::Renderer& renderer) override {
