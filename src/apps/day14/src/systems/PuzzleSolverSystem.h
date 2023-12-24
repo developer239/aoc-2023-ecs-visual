@@ -87,9 +87,6 @@ class PuzzleSolverSystem : public ECS::System {
     //    including the row the rock is on. (Cube-shaped rocks (#) don't
     //    contribute to load.) So, the amount of load caused by each rock in
     //    each row is as follows:
-    if(*simulationStarted) {
-      return;
-    }
 
     const float SCALE = scale;
     int HEIGHT = numRows + 1;
@@ -117,7 +114,7 @@ class PuzzleSolverSystem : public ECS::System {
 
       totalLoad += totalRoundedDiff;
 
-//      textComponent.text = std::string("O ") + std::to_string(totalRoundedDiff);
+      textComponent.text = std::string("O ") + std::to_string(totalRoundedDiff);
     }
 
     auto& tiltTrackerTextComponent =
@@ -156,7 +153,7 @@ class PuzzleSolverSystem : public ECS::System {
     for (auto entity : entities) {
       auto& rigidBody =
           ECS::Registry::Instance().GetComponent<RigidBodyComponent>(entity);
-      rigidBody.velocity.y = -0.5;
+      rigidBody.velocity.y = -5;
     }
   }
 

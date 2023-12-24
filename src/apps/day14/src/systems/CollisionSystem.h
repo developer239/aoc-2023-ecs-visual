@@ -105,6 +105,16 @@ class CollisionSystem : public ECS::System {
           rigidBodyA.velocity.y = 0;
           rigidBodyB.velocity.x = 0;
           rigidBodyB.velocity.y = 0;
+
+          // fix position and round to step scale (px)
+          rigidBodyA.position.x =
+              std::round(rigidBodyA.position.x / scale) * scale;
+          rigidBodyA.position.y =
+              std::round(rigidBodyA.position.y / scale) * scale;
+          rigidBodyB.position.x =
+              std::round(rigidBodyB.position.x / scale) * scale;
+          rigidBodyB.position.y =
+              std::round(rigidBodyB.position.y / scale) * scale;
         }
       }
     }

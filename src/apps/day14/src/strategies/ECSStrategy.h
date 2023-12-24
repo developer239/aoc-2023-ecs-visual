@@ -24,7 +24,7 @@ std::string filePath = "assets/input.txt";
 
 class MinimalLoopStrategy : public Core::IStrategy {
  public:
-  float scale = 20.0f;
+  float scale = 50.0f;
   int numRows = 0;
   int numCols = 0;
 
@@ -135,7 +135,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
       ECS::Registry::Instance().AddComponent<TextComponent>(
           cubeShapedRockEntity,
-          "",
+          "#",
           SDL_Color{0, 0, 255, 255},
           6
       );
@@ -173,7 +173,7 @@ class MinimalLoopStrategy : public Core::IStrategy {
 
       ECS::Registry::Instance().AddComponent<TextComponent>(
           cubeShapedRockEntity,
-          "",
+          "O",
           SDL_Color{0, 0, 255, 255},
           6
       );
