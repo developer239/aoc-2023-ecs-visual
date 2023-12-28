@@ -1,4 +1,4 @@
-# AoC Day 3 Visual
+# AoC 2023 Visual
 
 ![master](https://github.com/developer239/cpp-starter/actions/workflows/ci.yml/badge.svg)
 
@@ -29,11 +29,15 @@ $ ctest
 3) Run:
 
 ```bash
-$  cd build/src/apps/pong
-$ ./AppPong 
+$  cd build/src/apps/app-name
+$ ./app-name 
 ```
 
-# Result
+# Day 3
 
 ![part1](./example-input.png)
 ![part2](./input.png)
+
+# Day 14 Part 1
+![part1](./preview-14-1.gif)
+
