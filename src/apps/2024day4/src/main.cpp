@@ -151,7 +151,6 @@ std::vector<Match> findMatches(
     double threshold = 0.99
 ) {
   std::vector<Match> matches;
-  std::set<std::string> uniqueMatches;
 
   for (const auto& pattern : patterns) {
     cv::Mat result;
@@ -170,17 +169,7 @@ std::vector<Match> findMatches(
     cv::findNonZero(matches_mask, locations);
 
     for (const auto& loc : locations) {
-      std::string matchKey;
-      for (const auto& [color, offset] : pattern.pattern_def) {
-        cv::Point pixelLoc(loc.x + offset.x, loc.y + offset.y);
-        matchKey += std::to_string(pixelLoc.x) + "," +
-                    std::to_string(pixelLoc.y) + ";";
-      }
-
-      if (uniqueMatches.find(matchKey) == uniqueMatches.end()) {
-        matches.push_back({loc, pattern.name});
-        uniqueMatches.insert(matchKey);
-      }
+      matches.push_back({loc, pattern.name});
     }
   }
 
