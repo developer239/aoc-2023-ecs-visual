@@ -1,3 +1,4 @@
+add_subdirectory(apps/2024day4)
 add_subdirectory(apps/day3)
 add_subdirectory(apps/day14)
 

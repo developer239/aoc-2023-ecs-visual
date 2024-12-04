@@ -33,11 +33,15 @@ $  cd build/src/apps/app-name
 $ ./app-name 
 ```
 
-# Day 3
+# 2024 - Day 4 Part 1
+
+![part1](./2024-day-4-part-1.png)
+
+# 2023 - Day 3
 
 ![part1](./example-input.png)
 ![part2](./input.png)
 
-# Day 14 Part 1
+# 2023 - Day 14 Part 1
 ![part1](./preview-14-1.gif)
 
