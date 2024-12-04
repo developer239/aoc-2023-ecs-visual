@@ -141,25 +141,6 @@ std::vector<Pattern> createPatterns() {
   return patterns;
 }
 
-bool verifyMatch(
-    const cv::Mat& grid, const Pattern& pattern, const cv::Point& location
-) {
-  for (const auto& [color, offset] : pattern.pattern_def) {
-    cv::Point pixelLoc(location.x + offset.x, location.y + offset.y);
-
-    if (pixelLoc.x < 0 || pixelLoc.x >= grid.cols || pixelLoc.y < 0 ||
-        pixelLoc.y >= grid.rows) {
-      return false;
-    }
-
-    cv::Vec3b gridColor = grid.at<cv::Vec3b>(pixelLoc);
-    if (gridColor != color) {
-      return false;
-    }
-  }
-  return true;
-}
-
 struct Match {
   cv::Point location;
   std::string patternType;
@@ -178,7 +159,7 @@ std::vector<Match> findMatches(
         grid,
         pattern.template_image,
         result,
-        cv::TM_CCOEFF_NORMED,
+        cv::TM_CCORR_NORMED,
         pattern.mask
     );
 
@@ -189,18 +170,16 @@ std::vector<Match> findMatches(
     cv::findNonZero(matches_mask, locations);
 
     for (const auto& loc : locations) {
-      if (verifyMatch(grid, pattern, loc)) {
-        std::string matchKey;
-        for (const auto& [color, offset] : pattern.pattern_def) {
-          cv::Point pixelLoc(loc.x + offset.x, loc.y + offset.y);
-          matchKey += std::to_string(pixelLoc.x) + "," +
-                      std::to_string(pixelLoc.y) + ";";
-        }
+      std::string matchKey;
+      for (const auto& [color, offset] : pattern.pattern_def) {
+        cv::Point pixelLoc(loc.x + offset.x, loc.y + offset.y);
+        matchKey += std::to_string(pixelLoc.x) + "," +
+                    std::to_string(pixelLoc.y) + ";";
+      }
 
-        if (uniqueMatches.find(matchKey) == uniqueMatches.end()) {
-          matches.push_back({loc, pattern.name});
-          uniqueMatches.insert(matchKey);
-        }
+      if (uniqueMatches.find(matchKey) == uniqueMatches.end()) {
+        matches.push_back({loc, pattern.name});
+        uniqueMatches.insert(matchKey);
       }
     }
   }
@@ -250,7 +229,7 @@ cv::Mat visualizeMatches(
 }
 
 int main() {
-  const std::string filePath = "assets/input-example-1.txt";
+  const std::string filePath = "assets/input.txt";
   const int VISUALIZATION_PIXEL_SIZE =
       30;  // This is now only for visualization
 
