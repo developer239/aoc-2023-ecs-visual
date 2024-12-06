@@ -10,7 +10,7 @@ class Window {
   std::shared_ptr<SDL_Window> window;
 
  public:
-  Window(int width = 800, int height = 600, const char *title = "AoC 2023 Visual");
+  Window(int width = 800, int height = 600, const char *title = "AoC Visual");
 
   std::shared_ptr<SDL_Window> Get();
 
