@@ -37,6 +37,10 @@ $ ./app-name
 
 ![part1](./2024-day-4-part-1.png)
 
+# 2024 - Day 6 Part 1
+
+![part1](./2024-day-6-part-1.gif)
+
 # 2023 - Day 3
 
 ![part1](./example-input.png)
