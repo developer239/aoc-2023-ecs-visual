@@ -30,23 +30,23 @@ class MinimalLoopStrategy : public Core::IStrategy {
   std::vector<GameObject> obstructions;
   GameObject guard;
   std::vector<GameObject> path;
-  double pathTotalVelocity = 0;
+  std::vector<GameObject> distinctPositions;
+  std::vector<std::string> recentObstructionCoords;
 
   int boundaryHeight;
   int boundaryWidth;
 
-  int scale = 40;
+  int scale = 10;
   int defaultVelocity = 100;
 
   double totalTime = 0;
-  double lastPositionChange = 0;
 
   void Init(Core::Window& window, Core::Renderer& renderer) override {
     Core::AssetStore::Instance().AddFont("pico8", "assets/fonts/pico8.ttf", 24);
 
     auto size = 1 * scale;
 
-    const std::string filePath = "assets/input-example-1.txt";
+    const std::string filePath = "assets/input.txt";
     auto input = ParseInput(filePath);
 
     boundaryWidth = input[0].size() * size;
@@ -109,15 +109,16 @@ class MinimalLoopStrategy : public Core::IStrategy {
     guard.x += guard.velX * deltaTime;
     guard.y += guard.velY * deltaTime;
 
-    std::cout << totalTime << std::endl;
-
     for (auto& obstruction : obstructions) {
-      GameObject guardTemp = guard;
-      guardTemp.x += guard.velX * deltaTime;
-      guardTemp.y += guard.velY * deltaTime;
+      auto obstructionCoords =
+          std::to_string(obstruction.x) + "-" + std::to_string(obstruction.y);
+      auto isInRecentObstructionCoords = std::find(
+                                             recentObstructionCoords.begin(),
+                                             recentObstructionCoords.end(),
+                                             obstructionCoords
+                                         ) != recentObstructionCoords.end();
 
-      if (areOverlapping(guardTemp, obstruction) &&
-          totalTime - lastPositionChange > 0.4) {
+      if (areOverlapping(guard, obstruction) && !isInRecentObstructionCoords) {
         auto pastVelY = guard.velY;
         auto pastVelX = guard.velX;
 
@@ -125,55 +126,82 @@ class MinimalLoopStrategy : public Core::IStrategy {
         guard.velX = 0;
 
         if (pastVelY < 0) {
-          std::cout << "a" << std::endl;
           guard.velY = 0;
           guard.velX = defaultVelocity;
         }
 
         if (pastVelX > 0) {
-          std::cout << "b" << std::endl;
-
           guard.velX = 0;
           guard.velY = defaultVelocity;
         }
 
         if (pastVelY > 0) {
-          std::cout << "c" << std::endl;
-
           guard.velY = 0;
           guard.velX = -defaultVelocity;
         }
 
         if (pastVelX < 0) {
-          std::cout << "d" << std::endl;
-
           guard.velX = 0;
           guard.velY = -defaultVelocity;
         }
 
-        lastPositionChange = totalTime;
+        recentObstructionCoords.push_back(obstructionCoords);
+        if (recentObstructionCoords.size() > 2) {
+          recentObstructionCoords.erase(recentObstructionCoords.begin());
+        }
       }
+    }
+
+    // fix y if x is moving
+    if (std::abs(guard.velX) > 0) {
+      guard.y = std::round(guard.y / scale) * scale;
+    }
+
+    // fix x if y is moving
+    if (std::abs(guard.velY) > 0) {
+      guard.x = std::round(guard.x / scale) * scale;
     }
 
     auto pathElement = GameObject(
         1,
         1,
-        guard.x + guard.width/2,
-        guard.y + guard.height/2,
+        guard.x + guard.width / 2,
+        guard.y + guard.height / 2,
         0,
         0,
         {0, 255, 0}
     );
 
     // if path element out of bounds
-    if (pathElement.x > boundaryWidth || pathElement.y > boundaryHeight) {
+    if (pathElement.x > boundaryWidth || pathElement.y > boundaryHeight ||
+        pathElement.x < 0 || pathElement.y < 0) {
       guard.velX = 0;
       guard.velY = 0;
 
-      std::cout << "Path total velocity: " << pathTotalVelocity << std::endl;
+      // end game
+      std::cout << "Game over" << std::endl;
+      std::cout << "Distinct positions: " << distinctPositions.size()
+                << std::endl;
     } else {
-      pathTotalVelocity += std::abs(guard.velX) + std::abs(guard.velY);
       path.push_back(pathElement);
+
+      auto snappedX = std::round(guard.x / scale) * scale;
+      auto snappedY = std::round(guard.y / scale) * scale;
+
+      auto distinctPathPiece =
+          GameObject(scale, scale, snappedX, snappedY, 0, 0, {0, 255, 0});
+
+      auto isOverlapping = false;
+      for (auto& distinctPiece : distinctPositions) {
+        if (areOverlapping(distinctPiece, distinctPathPiece)) {
+          isOverlapping = true;
+          break;
+        }
+      }
+
+      if (!isOverlapping) {
+        distinctPositions.push_back(distinctPathPiece);
+      }
     }
   }
 
@@ -184,6 +212,9 @@ class MinimalLoopStrategy : public Core::IStrategy {
     }
     for (auto& pathElement : path) {
       pathElement.Render(renderer);
+    }
+    for (auto& distinctPiece : distinctPositions) {
+      distinctPiece.Render(renderer);
     }
 
     SDL_Rect rect = {0, 0, boundaryWidth, boundaryHeight};
